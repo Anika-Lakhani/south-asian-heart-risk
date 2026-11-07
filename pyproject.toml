@@ -13,6 +13,7 @@ authors = [{ name = "Anika Lakhani" }]
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
+app = ["streamlit>=1.46", "altair>=5", "pandas>=2"]
 dev = ["pytest>=8", "ruff==0.17.4"]
 
 [tool.hatch.build.targets.wheel]
