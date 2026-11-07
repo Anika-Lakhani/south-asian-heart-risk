@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Data (downloaded by scripts, never committed)
+data/raw/
+data/processed/
+
+# Models and outputs
+models/*.joblib
+reports/figures/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
