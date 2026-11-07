@@ -47,19 +47,24 @@ pip install -e ".[dev]"
 from heartrisk import Profile, score, simulate
 
 me = Profile(
-    age=48, sex="male", ethnicity="pakistani",
-    total_cholesterol=200, hdl_cholesterol=38, systolic_bp=132, bmi=26,
+    age=48,
+    sex="male",
+    ethnicity="pakistani",
+    total_cholesterol=200,
+    hdl_cholesterol=38,
+    systolic_bp=132,
+    bmi=26,
 )
 
 for key, result in score(me).items():
     print(f"{result.model.name}: {result.risk:.1%} ({result.model.outcome})")
 
-sim = simulate(me)                    # 4,000 plausible re-measurements
-sim.interval("qrisk3", level=0.9)     # (0.057, 0.097)
-sim.prob_above("qrisk3", 0.075)       # 0.49
+sim = simulate(me)  # 4,000 plausible re-measurements
+sim.interval("qrisk3", level=0.9)  # (0.057, 0.097)
+sim.prob_above("qrisk3", 0.075)  # 0.49
 sim.quantile_dots("qrisk3", n_dots=20)  # data for a quantile dotplot
 
-simulate(me, bp_readings=3)           # averaging readings narrows the spread
+simulate(me, bp_readings=3)  # averaging readings narrows the spread
 ```
 
 All model functions are vectorized with NumPy, so scoring thousands of samples is a single call.

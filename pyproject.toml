@@ -13,7 +13,7 @@ authors = [{ name = "Anika Lakhani" }]
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = ["pytest>=8", "ruff==0.17.4"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/heartrisk"]
