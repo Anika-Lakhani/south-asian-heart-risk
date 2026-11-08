@@ -71,6 +71,11 @@ npm run dev    # http://localhost:5173/south-asian-heart-risk/
 
 <br clear="right">
 
+
+
+
+Step 1 of the intake: a short introduction beside a card asking for age, sex, and ancestry, with a four-step progress bar.
+
 <img src="docs/screenshots/intake.png" alt="Step 1 of the intake: a short introduction beside a card asking for age, sex, and ancestry, with a four-step progress bar.">
 
 ## How it's built
