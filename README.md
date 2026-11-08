@@ -6,6 +6,13 @@
 
 **[Try it live →](https://anika-lakhani.github.io/south-asian-heart-risk/)**
 
+<a href="https://anika-lakhani.github.io/south-asian-heart-risk/">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/desktop-dark.png">
+    <img src="docs/screenshots/desktop-light.png" alt="The app for a 48-year-old Pakistani man: three calculators give 4.0%, 2.4%, and 7.5%, and a quantile dotplot shows 10 of 20 QRISK3 re-measurements past the 7.5% statin threshold.">
+  </picture>
+</a>
+
 ## The problem
 
 People of South Asian descent develop heart disease earlier and at higher rates than most other groups. But the risk calculators clinicians use disagree sharply about them:
@@ -45,13 +52,19 @@ The [app](https://anika-lakhani.github.io/south-asian-heart-risk/) scores you wi
 - **Ranges**: 90% and middle-50% bands around each estimate.
 - **In words**: a plain-language summary for each model.
 
+<img src="docs/screenshots/phone.png" alt="The quantile dotplots on a phone: QRISK3 shows 10 of 20 dots at or past the dashed 7.5% line, while the other two models sit well below it." width="260" align="right">
+
 It also shows the same person scored as white (only QRISK3 changes), and what-if sliders that update every model live as you drag. The headline sentence is generated from your results, so it says what matters for *you* ("the calculators disagree about which side of the line you're on"). Everything follows the system light/dark theme, using blue palettes that pass colorblind-safety and contrast checks in both modes; every chart has an accessible text description and a table twin, and animation respects reduced-motion settings.
+
+Add `?theme=dark` or `?theme=light` to the URL to override the system setting.
 
 ```bash
 cd web
 npm install
 npm run dev    # http://localhost:5173/south-asian-heart-risk/
 ```
+
+<br clear="right">
 
 ## How it's built
 

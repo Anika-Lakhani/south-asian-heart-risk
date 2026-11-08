@@ -22,7 +22,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --page: #0d0d0d;
     --surface: #1a1a19;
@@ -39,6 +39,25 @@
     --dot-loud: #9ec5f4;
     --warn: #eda100;
   }
+}
+
+/* ?theme=dark or ?theme=light overrides the system setting. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #3987e5;
+  --accent-ink: #86b6ef;
+  --accent-wash: #16263a;
+  --dot-quiet: #256abf;
+  --dot-loud: #9ec5f4;
+  --warn: #eda100;
 }
 
 *,
@@ -183,6 +202,7 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
   }
   .inputs-toggle > summary::after {
     content: "Edit";

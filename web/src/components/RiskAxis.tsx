@@ -13,13 +13,18 @@ export function RiskAxis({ width, xMax }: { width: number; xMax: number }) {
       <line className="axis-line" x1={0} x2={width} y1={0.5} y2={0.5} />
       {values.map((t, i) => {
         const x = (t / xMax) * width;
-        const anchor = i === 0 ? "start" : i === values.length - 1 && x > width - 20 ? "end" : "middle";
+        const last = i === values.length - 1;
+        const anchor = i === 0 ? "start" : last && x > width - 20 ? "end" : "middle";
+        // The end-anchored last label extends left; drop the one before it if they'd touch.
+        const crowded = i === values.length - 2 && width - x < 48;
         return (
           <g key={t} transform={`translate(${x},0)`}>
             <line className="tick" y1={0} y2={5} />
-            <text y={19} textAnchor={anchor}>
-              {pct(t, 0)}
-            </text>
+            {!crowded && (
+              <text y={19} textAnchor={anchor}>
+                {pct(t, 0)}
+              </text>
+            )}
           </g>
         );
       })}
