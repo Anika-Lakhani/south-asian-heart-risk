@@ -27,3 +27,6 @@ reports/figures/
 web/node_modules/
 web/dist/
 web/*.tsbuildinfo
+
+# ML data (downloaded by ml/download.py)
+ml/data/

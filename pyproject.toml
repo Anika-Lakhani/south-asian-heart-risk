@@ -14,6 +14,7 @@ dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff==0.17.4"]
+ml = ["pandas>=2", "scikit-learn>=1.5", "matplotlib>=3.8", "certifi"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/heartrisk"]

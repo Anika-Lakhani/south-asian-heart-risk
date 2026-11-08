@@ -81,6 +81,7 @@ tests/           Python tests against published reference values
 web/             The app: React + TypeScript, hand-built SVG charts, no chart library
   src/models/    TypeScript port of the models, tested for parity with Python
 scripts/         Generators that keep Python and TypeScript in sync
+ml/              ML analysis of CDC survey data: download, prepare, train, model card
 ```
 
 The models exist twice, once in Python and once in TypeScript, so the app can run entirely in the browser with no server. To keep the two from drifting, Python is the source of truth: [`scripts/export_web_models.py`](scripts/export_web_models.py) generates the QRISK3 coefficient tables for TypeScript, plus a fixture of 300 random profiles scored in Python. The TypeScript tests must reproduce every one to 12 decimal places, and a Python test fails if the generated files go stale.
@@ -131,15 +132,32 @@ Every model is tested against reference values published by its authors:
 Measurement variability defaults are approximate literature values (SBP within-person SD ≈ 12 mmHg; total and HDL cholesterol biological CV ≈ 6% and 7%). They're configurable via `MeasurementVariability`.
 
 ```bash
-pytest                    # Python: 71 tests
+pytest                    # Python: 87 tests
 cd web && npm test        # TypeScript: 362 tests, including the intake flow
+```
+
+## What US survey data says (ML analysis)
+
+[`ml/`](ml/) trains a model on the CDC's 2025 [BRFSS](https://www.cdc.gov/brfss/) survey: 273,266 US adults aged 30–79, with survey weights throughout so results describe the US population. Full details are in the **[model card](ml/MODEL_CARD.md)**.
+
+- **It measures prevalence, not future risk.** BRFSS is a one-time survey, so the model estimates the share of people *like you* who already report heart disease. That isn't comparable to the 10-year calculators, so the app doesn't show it.
+- **Risk factors only.** Medications and self-rated health are left out, because people often change them *after* a heart attack, and including them would leak the answer.
+- **Simple wins.** An additive logistic regression matches gradient boosting (AUROC 0.822 vs 0.823) while explaining every estimate exactly, so it's the chosen model.
+- **It's audited by subgroup.** Discrimination holds up across racial groups, but calibration doesn't. The model under-predicts for American Indian / Alaska Native and Black respondents.
+- **The headline finding:** in this data, being Asian *lowers* the estimate. BRFSS pools all Asian Americans into one group, which is mostly East and Southeast Asian adults, so South Asian risk is averaged away. A model trained on standard US data would tell a South Asian user their ancestry is protective, the opposite of what QRISK3 and the clinical research say.
+
+```bash
+pip install -e ".[ml]"
+python ml/download.py   # ~65 MB from cdc.gov
+python ml/prepare.py
+python ml/train.py      # writes ml/reports/ and ml/MODEL_CARD.md
 ```
 
 ## Roadmap
 
 1. ✅ **Risk models + uncertainty engine.** PCE, PREVENT, and QRISK3 as a tested, vectorized package, plus Monte Carlo propagation of measurement noise.
 2. ✅ **Interactive web app.** Three uncertainty displays (animated quantile dotplots, interval bands, plain-language summaries), an ancestry comparison, and live what-if sliders, deployed to GitHub Pages.
-3. **ML model.** Reproducible training on CDC BRFSS survey data, with held-out evaluation, calibration, per-person explanations, and a model card. The model card will be upfront that US survey data doesn't separate South Asians from other Asians.
+3. ✅ **ML analysis.** Reproducible pipeline on CDC BRFSS 2025, with survey-weighted evaluation, subgroup audit, per-person explanations, and a model card.
 4. **Write-up.** A short case study on the design decisions, with screenshots.
 
 ## Caveats
