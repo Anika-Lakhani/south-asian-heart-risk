@@ -22,6 +22,12 @@ SOFTWARE.
 
 ---
 
-Exception: src/heartrisk/models/qrisk3.py implements the QRISK3-2017 algorithm,
-copyright 2017 ClinRisk Ltd., and is licensed under the GNU Lesser General
-Public License v3.0 or later. See LICENSES/ for the full license texts.
+Exception: these files implement the QRISK3-2017 algorithm, copyright 2017
+ClinRisk Ltd., and are licensed under the GNU Lesser General Public License
+v3.0 or later:
+
+  src/heartrisk/models/qrisk3.py
+  web/src/models/qrisk3.ts
+  web/src/models/qrisk3Coefficients.ts
+
+See LICENSES/ for the full license texts.

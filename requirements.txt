@@ -1,2 +1,0 @@
-# Used by Streamlit Community Cloud to install the app.
-.[app]

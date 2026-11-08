@@ -4,7 +4,7 @@
 
 **Your 10-year heart risk depends on which calculator you ask, and on which day your blood pressure was measured.** This project makes both kinds of uncertainty visible, with a focus on South Asians, the group standard US calculators handle worst.
 
-> **Status:** Phases 1–2 of 4 done: validated risk models, a measurement-uncertainty engine, and an interactive app. Deployment and an ML model are next. See the [roadmap](#roadmap).
+**[Try it live →](https://anika-lakhani.github.io/south-asian-heart-risk/)**
 
 ## The problem
 
@@ -39,20 +39,35 @@ One principle carries over from the original design: **probabilities are shown a
 
 ## The app
 
-The app scores you with all three models, then shows how much each number could move, in your choice of three formats from the original study design:
+The [app](https://anika-lakhani.github.io/south-asian-heart-risk/) scores you with all three models, then shows how far each number could move, in your choice of three formats from the original study design:
 
-- **Dots**: a quantile dotplot. Each of 20 dots is one equally likely re-measurement, and the dots past the treatment threshold are highlighted, so "10 of 20" is something you can count.
+- **Dots**: a quantile dotplot. Each of 20 dots is one equally likely re-measurement, and the dots past the treatment threshold are highlighted, so "10 of 20" is something you can count. Dots keep their identity as inputs change, so you can watch the distribution shift as you edit, and on first load they drop in one at a time, a nod to the dice paper's Plinko display.
 - **Ranges**: 90% and middle-50% bands around each estimate.
 - **In words**: a plain-language summary for each model.
 
-It also shows the same person scored as white (only QRISK3 changes), plus what-if sliders for blood pressure, cholesterol, and smoking. It follows the system light/dark theme, with blue palettes that pass colorblind-safety checks in both modes.
+It also shows the same person scored as white (only QRISK3 changes), and what-if sliders that update every model live as you drag. The headline sentence is generated from your results, so it says what matters for *you* ("the calculators disagree about which side of the line you're on"). Everything follows the system light/dark theme, using blue palettes that pass colorblind-safety and contrast checks in both modes; every chart has an accessible text description and a table twin, and animation respects reduced-motion settings.
 
 ```bash
-pip install -e ".[app]"
-streamlit run app/streamlit_app.py
+cd web
+npm install
+npm run dev    # http://localhost:5173/south-asian-heart-risk/
 ```
 
-## Using the package
+## How it's built
+
+```
+src/heartrisk/   Python reference implementation (NumPy, vectorized)
+tests/           Python tests against published reference values
+web/             The app: React + TypeScript + hand-built SVG charts, no chart library
+  src/models/    TypeScript port of the models, tested for parity with Python
+scripts/         Generators that keep Python and TypeScript in sync
+```
+
+The models exist twice, once in Python and once in TypeScript, so the app can run entirely in the browser with no server. To keep the two from drifting, Python is the source of truth: [`scripts/export_web_models.py`](scripts/export_web_models.py) generates the QRISK3 coefficient tables for TypeScript, plus a fixture of 300 random profiles scored in Python. The TypeScript tests must reproduce every one to 12 decimal places, and a Python test fails if the generated files go stale.
+
+Every push to `main` runs both test suites, then builds and deploys the app to GitHub Pages.
+
+## The Python package
 
 ```bash
 pip install -e ".[dev]"
@@ -91,20 +106,21 @@ Every model is tested against reference values published by its authors:
 - **QRISK3**: all 48 reference profiles scored by ClinRisk's original C implementation match to 0.1%. The coefficient tables are generated from ClinRisk's source by [`scripts/gen_qrisk3_tables.py`](scripts/gen_qrisk3_tables.py), not typed by hand.
 - **PREVENT**: matches Table S25 of the paper's supplement (total CVD, ASCVD, heart failure).
 - **PCE**: matches the worked example in the 2013 guideline for all four sex/race groups.
+- **TypeScript port**: passes the same reference checks independently, and matches the Python implementation on 300 random profiles.
 
 Measurement variability defaults are approximate literature values (SBP within-person SD ≈ 12 mmHg; total and HDL cholesterol biological CV ≈ 6% and 7%). They're configurable via `MeasurementVariability`.
 
 ```bash
-pytest          # 77 tests, including the app's interactions
-ruff check .
+pytest                    # Python: 71 tests
+cd web && npm test        # TypeScript: 358 tests
 ```
 
 ## Roadmap
 
 1. ✅ **Risk models + uncertainty engine.** PCE, PREVENT, and QRISK3 as a tested, vectorized package, plus Monte Carlo propagation of measurement noise.
-2. ✅ **Interactive app.** Questionnaire, side-by-side model results, three uncertainty displays (quantile dotplots, interval bands, plain-language summaries), an ancestry comparison, and what-if sliders.
-3. **ML model.** Reproducible training on CDC BRFSS survey data, with held-out evaluation, calibration, per-person SHAP explanations, and a model card. The model card will be upfront that US survey data doesn't separate South Asians from other Asians.
-4. **Ship it.** Live deployment, screenshots, and a short write-up.
+2. ✅ **Interactive web app.** Three uncertainty displays (animated quantile dotplots, interval bands, plain-language summaries), an ancestry comparison, and live what-if sliders, deployed to GitHub Pages.
+3. **ML model.** Reproducible training on CDC BRFSS survey data, with held-out evaluation, calibration, per-person explanations, and a model card. The model card will be upfront that US survey data doesn't separate South Asians from other Asians.
+4. **Write-up.** A short case study on the design decisions, with screenshots.
 
 ## Caveats
 
@@ -122,7 +138,7 @@ ruff check .
 
 ## License
 
-MIT, except [`src/heartrisk/models/qrisk3.py`](src/heartrisk/models/qrisk3.py), which implements ClinRisk's QRISK3-2017 algorithm and is LGPL-3.0-or-later like the original. See [LICENSE](LICENSE) and [LICENSES/](LICENSES/).
+MIT, except the files that implement ClinRisk's QRISK3-2017 algorithm, which are LGPL-3.0-or-later like the original: [`src/heartrisk/models/qrisk3.py`](src/heartrisk/models/qrisk3.py), [`web/src/models/qrisk3.ts`](web/src/models/qrisk3.ts), and [`web/src/models/qrisk3Coefficients.ts`](web/src/models/qrisk3Coefficients.ts). See [LICENSE](LICENSE) and [LICENSES/](LICENSES/).
 
 ## Disclaimer
 

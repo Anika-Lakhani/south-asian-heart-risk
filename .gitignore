@@ -22,3 +22,8 @@ reports/figures/
 
 # Local tooling
 .claude/
+
+# Web app
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
