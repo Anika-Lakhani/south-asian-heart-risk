@@ -9,6 +9,8 @@ interface Props {
   readings: { bp: number; lipids: number };
   onReadingsChange: (readings: { bp: number; lipids: number }) => void;
   onComplete: () => void;
+  /** Step to open on, e.g. Review when coming back from the results to edit. */
+  initialStep?: number;
 }
 
 const STEPS = [
@@ -129,8 +131,15 @@ function Toggle(props: { label: string; checked: boolean; onChange: (checked: bo
   );
 }
 
-export function ProfileForm({ profile, onChange, readings, onReadingsChange, onComplete }: Props) {
-  const [step, setStep] = useState(0);
+export function ProfileForm({
+  profile,
+  onChange,
+  readings,
+  onReadingsChange,
+  onComplete,
+  initialStep = 0,
+}: Props) {
+  const [step, setStep] = useState(initialStep);
   const [bmiOpen, setBmiOpen] = useState(false);
   const [bmiUnits, setBmiUnits] = useState<"us" | "metric">("us");
   const [heightFeet, setHeightFeet] = useState(5);
@@ -139,7 +148,6 @@ export function ProfileForm({ profile, onChange, readings, onReadingsChange, onC
   const [heightCm, setHeightCm] = useState(170);
   const [weightKg, setWeightKg] = useState(75);
   const [bmiCalculated, setBmiCalculated] = useState(false);
-  const [shareData, setShareData] = useState(false);
   const set = <K extends keyof Profile>(key: K, value: Profile[K]) =>
     onChange({ ...profile, [key]: value });
 
@@ -554,23 +562,10 @@ export function ProfileForm({ profile, onChange, readings, onReadingsChange, onC
               <div className="privacy-note">
                 <span aria-hidden="true">✓</span>
                 <p>
-                  Your answers are calculated on this device and are not saved. Your data remains
-                  completely private unless you wish to add it to our database to help others
-                  calculate their heart risk better.
+                  Your answers are calculated on this device. Nothing you enter is sent anywhere or
+                  saved, and closing this page clears it.
                 </p>
               </div>
-              <label className="share-consent">
-                <input
-                  type="checkbox"
-                  checked={shareData}
-                  onChange={(event) => setShareData(event.target.checked)}
-                />
-                <span>
-                  <strong>Share my data to improve heart risk tracking</strong>
-                  Help improve estimates for at-risk populations. Prototype only—no data is sent
-                  yet.
-                </span>
-              </label>
             </div>
           </section>
         )}

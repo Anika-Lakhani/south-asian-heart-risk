@@ -58,7 +58,7 @@ The [app](https://anika-lakhani.github.io/south-asian-heart-risk/) has two parts
 
 <img src="docs/screenshots/phone.png" alt="The quantile dotplots on a phone: QRISK3 shows 10 of 20 dots at or past the dashed 7.5% line, while the other two models sit well below it." width="260" align="right">
 
-It also shows the same person scored as white (only QRISK3 changes), and what-if sliders that update every model live as you drag. The headline sentence is generated from your results, so it says what matters for *you* ("the calculators disagree about which side of the line you're on"). The results follow the system light/dark theme, using blue palettes that pass colorblind-safety and contrast checks in both modes. Every chart has an accessible text description and a table twin, and animation respects reduced-motion settings.
+It also shows the same person scored as white (only QRISK3 changes), and what-if sliders that update every model live as you drag. The headline sentence is generated from your results, so it says what matters for *you* ("the calculators disagree about which side of the line you're on"). Everything follows the system light/dark theme, using blue palettes that pass colorblind-safety and contrast checks in both modes. Every chart has an accessible text description and a table twin, and animation respects reduced-motion settings.
 
 Add `?theme=dark` or `?theme=light` to the URL to override the system setting.
 

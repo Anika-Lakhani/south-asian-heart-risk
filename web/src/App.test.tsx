@@ -60,14 +60,23 @@ describe("App", () => {
     expect(screen.getByRole("status").textContent).toBe("BMI updated to 25.8");
   });
 
-  it("returns to the start of the intake to edit answers, keeping them", () => {
+  it("returns to the Review step to edit answers, keeping them", () => {
     render(<App />);
     next();
     next();
     next();
     fireEvent.click(screen.getByRole("button", { name: /see my heart risk/i }));
     fireEvent.click(screen.getByRole("button", { name: /edit my answers/i }));
-    expect(screen.getByText("Step 1 of 4")).toBeTruthy();
-    expect((screen.getByRole("spinbutton", { name: /how old are you/i }) as HTMLInputElement).value).toBe("48");
+    expect(screen.getByText("Step 4 of 4")).toBeTruthy();
+    expect(document.body.textContent).toContain("48, male, Pakistani");
+  });
+
+  it("makes no data-sharing offer, since nothing is ever sent", () => {
+    render(<App />);
+    next();
+    next();
+    next();
+    expect(screen.queryAllByRole("checkbox", { name: /share/i })).toHaveLength(0);
+    expect(document.body.textContent).toContain("Nothing you enter is sent anywhere");
   });
 });

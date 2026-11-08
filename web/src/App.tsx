@@ -58,6 +58,7 @@ export default function App() {
   const [profile, setProfile] = useState<Profile>(BASE_PROFILE);
   const [readings, setReadings] = useState({ bp: 1, lipids: 1 });
   const [hasResults, setHasResults] = useState(false);
+  const [formStep, setFormStep] = useState(0);
   const [threshold, setThreshold] = useState(0.075);
   const [view, setView] = useState<View>("dots");
   const [whatIf, setWhatIf] = useState<Partial<Profile>>({});
@@ -141,6 +142,7 @@ export default function App() {
               onChange={updateProfile}
               readings={readings}
               onReadingsChange={setReadings}
+              initialStep={formStep}
               onComplete={() => {
                 if (!validate(profile)) {
                   setHasResults(true);
@@ -171,7 +173,15 @@ export default function App() {
           <p className="eyebrow">Your heart risk overview</p>
           <h1>How sure is your heart risk?</h1>
         </div>
-        <button type="button" className="edit-answers" onClick={() => setHasResults(false)}>
+        <button
+          type="button"
+          className="edit-answers"
+          onClick={() => {
+            // Come back to Review, where every answer is one "Edit" away.
+            setFormStep(3);
+            setHasResults(false);
+          }}
+        >
           Edit my answers
         </button>
       </header>
