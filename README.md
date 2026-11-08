@@ -8,8 +8,8 @@
 
 <a href="https://anika-lakhani.github.io/south-asian-heart-risk/">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/desktop-dark.png">
-    <img src="docs/screenshots/desktop-light.png" alt="The app for a 48-year-old Pakistani man: three calculators give 4.0%, 2.4%, and 7.5%, and a quantile dotplot shows 10 of 20 QRISK3 re-measurements past the 7.5% statin threshold.">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/results-dark.png">
+    <img src="docs/screenshots/results-light.png" alt="Results for a 48-year-old Pakistani man: a guide to reading the results, then three calculators giving 4.0%, 2.4%, and 7.5%, each with a likely range and a natural-frequency explanation.">
   </picture>
 </a>
 
@@ -46,32 +46,39 @@ One principle carries over from the original design: **probabilities are shown a
 
 ## The app
 
-The [app](https://anika-lakhani.github.io/south-asian-heart-risk/) scores you with all three models, then shows how far each number could move, in your choice of three formats from the original study design:
+The [app](https://anika-lakhani.github.io/south-asian-heart-risk/) has two parts, designed in Figma Make and built on the tested models below.
 
-- **Dots**: a quantile dotplot. Each of 20 dots is one equally likely re-measurement, and the dots past the treatment threshold are highlighted, so "10 of 20" is something you can count. Dots keep their identity as inputs change, so you can watch the distribution shift as you edit, and on first load they drop in one at a time, a nod to the dice paper's Plinko display.
+**A four-step intake** (about you, your numbers, health history, review) asks plain-language questions, with hints for where to find each number. It also has steppers you can drag to adjust, a BMI calculator for people who don't know theirs, and example profiles for anyone without their own numbers. Everything is calculated in the browser and nothing is saved.
+
+**A results page** starts with how to read it ("three answers, not one verdict"), then shows each calculator's estimate, a likely range, and a natural-frequency translation ("about 7–8 in 100 people with the same inputs"). It separates the two kinds of uncertainty, **model** (the calculators disagree) and **measurement** (any one reading is noisy), and shows the measurement spread in your choice of three formats from the original study design:
+
+- **Dots**: a quantile dotplot. Each of 20 dots is one equally likely re-measurement, and the dots past the treatment threshold are highlighted, so "10 of 20" is something you can count. On load the dots drop in one at a time, a nod to the dice paper's Plinko display.
 - **Ranges**: 90% and middle-50% bands around each estimate.
 - **In words**: a plain-language summary for each model.
 
 <img src="docs/screenshots/phone.png" alt="The quantile dotplots on a phone: QRISK3 shows 10 of 20 dots at or past the dashed 7.5% line, while the other two models sit well below it." width="260" align="right">
 
-It also shows the same person scored as white (only QRISK3 changes), and what-if sliders that update every model live as you drag. The headline sentence is generated from your results, so it says what matters for *you* ("the calculators disagree about which side of the line you're on"). Everything follows the system light/dark theme, using blue palettes that pass colorblind-safety and contrast checks in both modes; every chart has an accessible text description and a table twin, and animation respects reduced-motion settings.
+It also shows the same person scored as white (only QRISK3 changes), and what-if sliders that update every model live as you drag. The headline sentence is generated from your results, so it says what matters for *you* ("the calculators disagree about which side of the line you're on"). The results follow the system light/dark theme, using blue palettes that pass colorblind-safety and contrast checks in both modes. Every chart has an accessible text description and a table twin, and animation respects reduced-motion settings.
 
 Add `?theme=dark` or `?theme=light` to the URL to override the system setting.
 
 ```bash
 cd web
+nvm use        # Node 22, from .nvmrc
 npm install
 npm run dev    # http://localhost:5173/south-asian-heart-risk/
 ```
 
 <br clear="right">
 
+<img src="docs/screenshots/intake.png" alt="Step 1 of the intake: a short introduction beside a card asking for age, sex, and ancestry, with a four-step progress bar.">
+
 ## How it's built
 
 ```
 src/heartrisk/   Python reference implementation (NumPy, vectorized)
 tests/           Python tests against published reference values
-web/             The app: React + TypeScript + hand-built SVG charts, no chart library
+web/             The app: React + TypeScript, hand-built SVG charts, no chart library
   src/models/    TypeScript port of the models, tested for parity with Python
 scripts/         Generators that keep Python and TypeScript in sync
 ```
@@ -125,7 +132,7 @@ Measurement variability defaults are approximate literature values (SBP within-p
 
 ```bash
 pytest                    # Python: 71 tests
-cd web && npm test        # TypeScript: 358 tests
+cd web && npm test        # TypeScript: 362 tests, including the intake flow
 ```
 
 ## Roadmap

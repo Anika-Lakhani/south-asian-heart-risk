@@ -1,20 +1,26 @@
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+
+import { CONDITION_LABELS, ETHNICITY_LABELS, EXAMPLES, SMOKING_LABELS } from "../lib/examples";
 import { CONDITIONS, ETHNICITIES, SMOKING, type Profile } from "../models/profile";
-import {
-  CONDITION_LABELS,
-  ETHNICITY_LABELS,
-  EXAMPLES,
-  SMOKING_LABELS,
-} from "../lib/examples";
 
 interface Props {
   profile: Profile;
   onChange: (profile: Profile) => void;
   readings: { bp: number; lipids: number };
   onReadingsChange: (readings: { bp: number; lipids: number }) => void;
+  onComplete: () => void;
 }
+
+const STEPS = [
+  { title: "About you", note: "The basics" },
+  { title: "Your numbers", note: "Recent readings" },
+  { title: "Health history", note: "A few quick questions" },
+  { title: "Review", note: "Check and calculate" },
+] as const;
 
 function NumberField(props: {
   label: string;
+  hint?: string;
   unit?: string;
   value: number;
   min: number;
@@ -22,10 +28,36 @@ function NumberField(props: {
   step?: number;
   onChange: (value: number) => void;
 }) {
-  const { label, unit, value, min, max, step = 1, onChange } = props;
+  const { label, hint, unit, value, min, max, step = 1, onChange } = props;
+  const drag = useRef<{ y: number; value: number } | null>(null);
+  const precision = (String(step).split(".")[1] ?? "").length;
+  const adjust = (direction: number) => {
+    const current = Number.isFinite(value) ? value : min;
+    const next = Math.min(max, Math.max(min, current + direction * step));
+    onChange(Number(next.toFixed(precision)));
+  };
+  const startDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    drag.current = { y: event.clientY, value: Number.isFinite(value) ? value : min };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  };
+  const scrub = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (!drag.current) return;
+    const stepsMoved = Math.round((drag.current.y - event.clientY) / 6);
+    const next = Math.min(max, Math.max(min, drag.current.value + stepsMoved * step));
+    onChange(Number(next.toFixed(precision)));
+  };
+  const stopDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    drag.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
   return (
     <label className="field">
       <span className="field-label">{label}</span>
+      {hint && <span className="field-hint">{hint}</span>}
       <span className="number-input">
         <input
           type="number"
@@ -34,9 +66,51 @@ function NumberField(props: {
           min={min}
           max={max}
           step={step}
-          onChange={(e) => onChange(e.target.valueAsNumber)}
+          onChange={(event) => onChange(event.target.valueAsNumber)}
         />
         {unit && <span className="unit">{unit}</span>}
+        <span className="number-controls">
+          <button
+            type="button"
+            className="number-step"
+            aria-label={`Increase ${label}`}
+            onClick={() => adjust(1)}
+          >
+            <svg viewBox="0 0 12 8" aria-hidden="true">
+              <path d="m2 6 4-4 4 4" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="number-scrub"
+            aria-label={`Drag up or down to adjust ${label}`}
+            title="Drag up or down to adjust"
+            onPointerDown={startDrag}
+            onPointerMove={scrub}
+            onPointerUp={stopDrag}
+            onPointerCancel={stopDrag}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                event.preventDefault();
+                adjust(event.key === "ArrowUp" ? 1 : -1);
+              }
+            }}
+          >
+            <svg viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M3 3h6M3 6h6M3 9h6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="number-step"
+            aria-label={`Decrease ${label}`}
+            onClick={() => adjust(-1)}
+          >
+            <svg viewBox="0 0 12 8" aria-hidden="true">
+              <path d="m2 2 4 4 4-4" />
+            </svg>
+          </button>
+        </span>
       </span>
     </label>
   );
@@ -44,195 +118,477 @@ function NumberField(props: {
 
 function Toggle(props: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
-    <label className="toggle">
+    <label className="choice-row">
+      <span>{props.label}</span>
       <input
         type="checkbox"
         checked={props.checked}
-        onChange={(e) => props.onChange(e.target.checked)}
+        onChange={(event) => props.onChange(event.target.checked)}
       />
-      <span>{props.label}</span>
     </label>
   );
 }
 
-export function ProfileForm({ profile, onChange, readings, onReadingsChange }: Props) {
+export function ProfileForm({ profile, onChange, readings, onReadingsChange, onComplete }: Props) {
+  const [step, setStep] = useState(0);
+  const [bmiOpen, setBmiOpen] = useState(false);
+  const [bmiUnits, setBmiUnits] = useState<"us" | "metric">("us");
+  const [heightFeet, setHeightFeet] = useState(5);
+  const [heightInches, setHeightInches] = useState(7);
+  const [weightPounds, setWeightPounds] = useState(165);
+  const [heightCm, setHeightCm] = useState(170);
+  const [weightKg, setWeightKg] = useState(75);
+  const [bmiCalculated, setBmiCalculated] = useState(false);
+  const [shareData, setShareData] = useState(false);
   const set = <K extends keyof Profile>(key: K, value: Profile[K]) =>
     onChange({ ...profile, [key]: value });
-  const activeExample = EXAMPLES.find(
-    (e) => JSON.stringify(e.profile) === JSON.stringify(profile),
-  )?.label;
+
+  const calculateBmi = () => {
+    const bmi =
+      bmiUnits === "us"
+        ? (703 * weightPounds) / (heightFeet * 12 + heightInches) ** 2
+        : weightKg / (heightCm / 100) ** 2;
+    if (Number.isFinite(bmi) && bmi > 0) {
+      set("bmi", Number(bmi.toFixed(1)));
+      setBmiCalculated(true);
+    }
+  };
+
+  const goNext = () => {
+    if (step < STEPS.length - 1) {
+      setStep(step + 1);
+      document.querySelector(".assessment-card")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      onComplete();
+    }
+  };
 
   return (
-    <form className="profile-form" onSubmit={(e) => e.preventDefault()}>
-      <fieldset className="examples">
-        <legend>Try an example</legend>
-        <div className="chips">
-          {EXAMPLES.map((example) => (
-            <button
-              key={example.label}
-              type="button"
-              className="chip"
-              aria-pressed={activeExample === example.label}
-              onClick={() => onChange(example.profile)}
-            >
-              {example.label}
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
-      <div className="field-grid">
-        <NumberField label="Age" value={profile.age} min={25} max={84} onChange={(v) => set("age", v)} />
-        <div className="field">
-          <span className="field-label" id="sex-label">
-            Sex
-          </span>
-          <div className="segmented small" role="group" aria-labelledby="sex-label">
-            {(["female", "male"] as const).map((sex) => (
-              <button
-                key={sex}
-                type="button"
-                aria-pressed={profile.sex === sex}
-                onClick={() => set("sex", sex)}
-              >
-                {sex === "female" ? "Female" : "Male"}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <label className="field">
-        <span className="field-label">Ancestry</span>
-        <select
-          value={profile.ethnicity}
-          onChange={(e) => set("ethnicity", e.target.value as Profile["ethnicity"])}
-        >
-          {ETHNICITIES.map((e) => (
-            <option key={e} value={e}>
-              {ETHNICITY_LABELS[e]}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="field-grid">
-        <NumberField
-          label="Total cholesterol"
-          unit="mg/dL"
-          value={profile.totalCholesterol}
-          min={100}
-          max={400}
-          onChange={(v) => set("totalCholesterol", v)}
-        />
-        <NumberField
-          label="HDL cholesterol"
-          unit="mg/dL"
-          value={profile.hdlCholesterol}
-          min={15}
-          max={120}
-          onChange={(v) => set("hdlCholesterol", v)}
-        />
-      </div>
-      <div className="field-grid">
-        <NumberField
-          label="Systolic BP"
-          unit="mmHg"
-          value={profile.systolicBp}
-          min={80}
-          max={220}
-          onChange={(v) => set("systolicBp", v)}
-        />
-        <NumberField
-          label="BMI"
-          value={profile.bmi}
-          min={15}
-          max={50}
-          step={0.5}
-          onChange={(v) => set("bmi", v)}
-        />
-      </div>
-
-      <div className="field-grid smoking-row">
-        <label className="field">
-          <span className="field-label">Smoking</span>
-          <select
-            value={profile.smoking}
-            onChange={(e) => set("smoking", e.target.value as Profile["smoking"])}
+    <form className="profile-form" onSubmit={(event) => event.preventDefault()}>
+      <nav className="stepper" aria-label="Assessment progress">
+        {STEPS.map((item, index) => (
+          <button
+            key={item.title}
+            type="button"
+            className={index === step ? "current" : index < step ? "complete" : ""}
+            aria-current={index === step ? "step" : undefined}
+            disabled={index > step}
+            onClick={() => index <= step && setStep(index)}
           >
-            {SMOKING.map((s) => (
-              <option key={s} value={s}>
-                {SMOKING_LABELS[s]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span className="field-label">Diabetes</span>
-          <select
-            value={profile.diabetes}
-            onChange={(e) => set("diabetes", e.target.value as Profile["diabetes"])}
-          >
-            <option value="none">No</option>
-            <option value="type1">Type 1</option>
-            <option value="type2">Type 2</option>
-          </select>
-        </label>
-      </div>
+            <span className="step-number">{index < step ? "✓" : index + 1}</span>
+            <span className="step-copy">
+              <strong>{item.title}</strong>
+              <small>{item.note}</small>
+            </span>
+          </button>
+        ))}
+      </nav>
 
-      <Toggle
-        label="Taking blood pressure medication"
-        checked={profile.onBpMeds}
-        onChange={(v) => set("onBpMeds", v)}
-      />
-      <Toggle
-        label="Parent or sibling had heart disease before 60"
-        checked={profile.familyHistoryCvd}
-        onChange={(v) => set("familyHistoryCvd", v)}
-      />
+      <div className="step-content">
+        <div className="step-kicker">
+          Step {step + 1} of {STEPS.length}
+        </div>
 
-      <details className="more">
-        <summary>More details</summary>
-        <Toggle label="Taking a statin" checked={profile.onStatin} onChange={(v) => set("onStatin", v)} />
-        <NumberField
-          label="Kidney function (eGFR)"
-          unit="mL/min"
-          value={profile.egfr}
-          min={15}
-          max={140}
-          onChange={(v) => set("egfr", v)}
-        />
-        <fieldset className="conditions">
-          <legend className="field-label">Other conditions (used by QRISK3)</legend>
-          {CONDITIONS.filter((c) => c !== "erectileDysfunction" || profile.sex === "male").map(
-            (condition) => (
-              <Toggle
-                key={condition}
-                label={CONDITION_LABELS[condition] ?? condition}
-                checked={profile[condition]}
-                onChange={(v) => set(condition, v)}
+        {step === 0 && (
+          <section aria-labelledby="step-about">
+            <h2 id="step-about">First, tell us about yourself</h2>
+            <p className="step-intro">
+              Risk changes with age, sex, and ancestry. Your information stays in your browser.
+            </p>
+            <div className="form-stack">
+              <NumberField
+                label="How old are you?"
+                value={profile.age}
+                min={25}
+                max={84}
+                onChange={(value) => set("age", value)}
               />
-            ),
+              <fieldset>
+                <legend>What sex were you assigned at birth?</legend>
+                <p className="field-hint">The calculators use sex-specific equations.</p>
+                <div className="option-cards two-up">
+                  {(["female", "male"] as const).map((sex) => (
+                    <button
+                      key={sex}
+                      type="button"
+                      aria-pressed={profile.sex === sex}
+                      onClick={() => set("sex", sex)}
+                    >
+                      {sex === "female" ? "Female" : "Male"}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <label className="field">
+                <span className="field-label">Which best describes your ancestry?</span>
+                <span className="field-hint">
+                  QRISK3 accounts for differences between South Asian groups.
+                </span>
+                <select
+                  value={profile.ethnicity}
+                  onChange={(event) => set("ethnicity", event.target.value as Profile["ethnicity"])}
+                >
+                  {ETHNICITIES.map((ethnicity) => (
+                    <option key={ethnicity} value={ethnicity}>
+                      {ETHNICITY_LABELS[ethnicity]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <details className="sample-profiles">
+              <summary>Don’t have your numbers? Try an example</summary>
+              <div className="chips">
+                {EXAMPLES.map((example) => (
+                  <button
+                    key={example.label}
+                    type="button"
+                    className="chip"
+                    onClick={() => onChange(example.profile)}
+                  >
+                    {example.label}
+                  </button>
+                ))}
+              </div>
+            </details>
+          </section>
+        )}
+
+        {step === 1 && (
+          <section aria-labelledby="step-numbers">
+            <h2 id="step-numbers">Add your latest health numbers</h2>
+            <p className="step-intro">
+              Estimates are fine. You can find these on recent lab results or visit notes.
+            </p>
+            <div className="measurement-grid">
+              <NumberField
+                label="Systolic blood pressure"
+                hint="The top number in your reading"
+                unit="mmHg"
+                value={profile.systolicBp}
+                min={80}
+                max={220}
+                onChange={(value) => set("systolicBp", value)}
+              />
+              <NumberField
+                label="Total cholesterol"
+                hint="Usually between 100 and 400"
+                unit="mg/dL"
+                value={profile.totalCholesterol}
+                min={100}
+                max={400}
+                onChange={(value) => set("totalCholesterol", value)}
+              />
+              <NumberField
+                label="HDL cholesterol"
+                hint="Sometimes called “good” cholesterol"
+                unit="mg/dL"
+                value={profile.hdlCholesterol}
+                min={15}
+                max={120}
+                onChange={(value) => set("hdlCholesterol", value)}
+              />
+              <div className="bmi-field">
+                <NumberField
+                  label="Body mass index (BMI)"
+                  hint="An estimate is okay"
+                  value={profile.bmi}
+                  min={15}
+                  max={50}
+                  step={0.5}
+                  onChange={(value) => {
+                    set("bmi", value);
+                    setBmiCalculated(false);
+                  }}
+                />
+                <button
+                  type="button"
+                  className="bmi-disclosure"
+                  aria-expanded={bmiOpen}
+                  aria-controls="bmi-calculator"
+                  onClick={() => setBmiOpen(!bmiOpen)}
+                >
+                  {bmiOpen ? "Close BMI calculator" : "I don’t know my BMI"}
+                  <svg viewBox="0 0 12 12" aria-hidden="true">
+                    <path d={bmiOpen ? "m2 8 4-4 4 4" : "m2 4 4 4 4-4"} />
+                  </svg>
+                </button>
+                {bmiOpen && (
+                  <div className="bmi-calculator" id="bmi-calculator">
+                    <div className="bmi-calculator-head">
+                      <strong>Calculate from height and weight</strong>
+                      <div className="bmi-unit-toggle" role="group" aria-label="BMI units">
+                        <button
+                          type="button"
+                          aria-pressed={bmiUnits === "us"}
+                          onClick={() => {
+                            setBmiUnits("us");
+                            setBmiCalculated(false);
+                          }}
+                        >
+                          ft / lb
+                        </button>
+                        <button
+                          type="button"
+                          aria-pressed={bmiUnits === "metric"}
+                          onClick={() => {
+                            setBmiUnits("metric");
+                            setBmiCalculated(false);
+                          }}
+                        >
+                          cm / kg
+                        </button>
+                      </div>
+                    </div>
+                    {bmiUnits === "us" ? (
+                      <div className="bmi-inputs us">
+                        <NumberField
+                          label="Height"
+                          unit="ft"
+                          value={heightFeet}
+                          min={3}
+                          max={8}
+                          onChange={(value) => {
+                            setHeightFeet(value);
+                            setBmiCalculated(false);
+                          }}
+                        />
+                        <NumberField
+                          label="Inches"
+                          unit="in"
+                          value={heightInches}
+                          min={0}
+                          max={11}
+                          onChange={(value) => {
+                            setHeightInches(value);
+                            setBmiCalculated(false);
+                          }}
+                        />
+                        <NumberField
+                          label="Weight"
+                          unit="lb"
+                          value={weightPounds}
+                          min={70}
+                          max={700}
+                          onChange={(value) => {
+                            setWeightPounds(value);
+                            setBmiCalculated(false);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="bmi-inputs">
+                        <NumberField
+                          label="Height"
+                          unit="cm"
+                          value={heightCm}
+                          min={100}
+                          max={250}
+                          onChange={(value) => {
+                            setHeightCm(value);
+                            setBmiCalculated(false);
+                          }}
+                        />
+                        <NumberField
+                          label="Weight"
+                          unit="kg"
+                          value={weightKg}
+                          min={30}
+                          max={320}
+                          step={0.5}
+                          onChange={(value) => {
+                            setWeightKg(value);
+                            setBmiCalculated(false);
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="bmi-calculator-actions">
+                      <button type="button" className="bmi-calculate" onClick={calculateBmi}>
+                        Calculate and use BMI
+                      </button>
+                      {bmiCalculated && (
+                        <span role="status">BMI updated to {profile.bmi.toFixed(1)}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step === 2 && (
+          <section aria-labelledby="step-history">
+            <h2 id="step-history">A little about your health</h2>
+            <p className="step-intro">
+              These factors help the calculators make a more personal estimate.
+            </p>
+            <div className="form-stack">
+              <label className="field">
+                <span className="field-label">Do you smoke?</span>
+                <select
+                  value={profile.smoking}
+                  onChange={(event) => set("smoking", event.target.value as Profile["smoking"])}
+                >
+                  {SMOKING.map((smoking) => (
+                    <option key={smoking} value={smoking}>
+                      {SMOKING_LABELS[smoking]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span className="field-label">Do you have diabetes?</span>
+                <select
+                  value={profile.diabetes}
+                  onChange={(event) => set("diabetes", event.target.value as Profile["diabetes"])}
+                >
+                  <option value="none">No</option>
+                  <option value="type1">Yes, type 1</option>
+                  <option value="type2">Yes, type 2</option>
+                </select>
+              </label>
+              <div className="choice-group">
+                <Toggle
+                  label="I take blood pressure medication"
+                  checked={profile.onBpMeds}
+                  onChange={(value) => set("onBpMeds", value)}
+                />
+                <Toggle
+                  label="A parent or sibling had heart disease before age 60"
+                  checked={profile.familyHistoryCvd}
+                  onChange={(value) => set("familyHistoryCvd", value)}
+                />
+                <Toggle
+                  label="I take a statin"
+                  checked={profile.onStatin}
+                  onChange={(value) => set("onStatin", value)}
+                />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step === 3 && (
+          <section aria-labelledby="step-review">
+            <h2 id="step-review">You’re ready to see your estimate</h2>
+            <p className="step-intro">
+              Take a quick look. You can always come back and change these details.
+            </p>
+            <dl className="review-grid">
+              <div>
+                <dt>About you</dt>
+                <dd>
+                  {profile.age}, {profile.sex}, {ETHNICITY_LABELS[profile.ethnicity]}
+                </dd>
+                <button type="button" onClick={() => setStep(0)}>
+                  Edit
+                </button>
+              </div>
+              <div>
+                <dt>Latest readings</dt>
+                <dd>
+                  BP {profile.systolicBp}; cholesterol {profile.totalCholesterol}/
+                  {profile.hdlCholesterol}; BMI {profile.bmi}
+                </dd>
+                <button type="button" onClick={() => setStep(1)}>
+                  Edit
+                </button>
+              </div>
+              <div>
+                <dt>Health history</dt>
+                <dd>
+                  {SMOKING_LABELS[profile.smoking]};{" "}
+                  {profile.diabetes === "none" ? "no diabetes" : `${profile.diabetes} diabetes`}
+                </dd>
+                <button type="button" onClick={() => setStep(2)}>
+                  Edit
+                </button>
+              </div>
+            </dl>
+            <details className="more">
+              <summary>Add optional medical details</summary>
+              <div className="optional-fields">
+                <NumberField
+                  label="Kidney function (eGFR)"
+                  unit="mL/min"
+                  value={profile.egfr}
+                  min={15}
+                  max={140}
+                  onChange={(value) => set("egfr", value)}
+                />
+                <fieldset className="conditions">
+                  <legend>Other conditions used by QRISK3</legend>
+                  {CONDITIONS.filter(
+                    (condition) => condition !== "erectileDysfunction" || profile.sex === "male",
+                  ).map((condition) => (
+                    <Toggle
+                      key={condition}
+                      label={CONDITION_LABELS[condition] ?? condition}
+                      checked={profile[condition]}
+                      onChange={(value) => set(condition, value)}
+                    />
+                  ))}
+                </fieldset>
+                <div className="measurement-grid">
+                  <NumberField
+                    label="BP readings averaged"
+                    value={readings.bp}
+                    min={1}
+                    max={6}
+                    onChange={(value) => onReadingsChange({ ...readings, bp: value })}
+                  />
+                  <NumberField
+                    label="Cholesterol tests averaged"
+                    value={readings.lipids}
+                    min={1}
+                    max={4}
+                    onChange={(value) => onReadingsChange({ ...readings, lipids: value })}
+                  />
+                </div>
+                <p className="hint">Averaging several readings shrinks measurement noise.</p>
+              </div>
+            </details>
+            <div className="privacy-block">
+              <div className="privacy-note">
+                <span aria-hidden="true">✓</span>
+                <p>
+                  Your answers are calculated on this device and are not saved. Your data remains
+                  completely private unless you wish to add it to our database to help others
+                  calculate their heart risk better.
+                </p>
+              </div>
+              <label className="share-consent">
+                <input
+                  type="checkbox"
+                  checked={shareData}
+                  onChange={(event) => setShareData(event.target.checked)}
+                />
+                <span>
+                  <strong>Share my data to improve heart risk tracking</strong>
+                  Help improve estimates for at-risk populations. Prototype only—no data is sent
+                  yet.
+                </span>
+              </label>
+            </div>
+          </section>
+        )}
+
+        <div className="form-actions">
+          {step > 0 ? (
+            <button type="button" className="secondary-button" onClick={() => setStep(step - 1)}>
+              Back
+            </button>
+          ) : (
+            <span />
           )}
-        </fieldset>
-        <div className="field-grid">
-          <NumberField
-            label="BP readings averaged"
-            value={readings.bp}
-            min={1}
-            max={6}
-            onChange={(v) => onReadingsChange({ ...readings, bp: v })}
-          />
-          <NumberField
-            label="Cholesterol tests averaged"
-            value={readings.lipids}
-            min={1}
-            max={4}
-            onChange={(v) => onReadingsChange({ ...readings, lipids: v })}
-          />
+          <button type="button" className="primary-button" onClick={goNext}>
+            {step === STEPS.length - 1 ? "See my heart risk" : "Continue"}
+            <span aria-hidden="true">→</span>
+          </button>
         </div>
-        <p className="hint">Averaging several readings shrinks measurement noise.</p>
-      </details>
+      </div>
     </form>
   );
 }

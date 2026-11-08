@@ -101,10 +101,7 @@ export function QuantileDotplots({ rows, threshold, xMax }: Props) {
               <div
                 className="tooltip"
                 style={{
-                  left: Math.min(
-                    width - 120,
-                    Math.max(0, (row.dots[hover.index]?.cx ?? 0) - 60),
-                  ),
+                  left: Math.min(width - 120, Math.max(0, (row.dots[hover.index]?.cx ?? 0) - 60)),
                 }}
                 role="status"
               >

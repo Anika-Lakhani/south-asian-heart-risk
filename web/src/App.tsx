@@ -15,10 +15,16 @@ import { simulate, summarize, type Summary } from "./models/uncertainty";
 const N_DOTS = 20;
 const REPO = "https://github.com/Anika-Lakhani/south-asian-heart-risk";
 type View = "dots" | "ranges" | "words";
-const WIDE_SCREEN = "(min-width: 861px)";
 
 const clampInt = (value: number, low: number, high: number) =>
   Number.isFinite(value) ? Math.round(Math.min(Math.max(value, low), high)) : low;
+
+function naturalFrequency(risk: number) {
+  const exact = risk * 100;
+  const low = Math.floor(exact);
+  const high = Math.ceil(exact);
+  return low === high ? `about ${low} in 100` : `about ${low}–${high} in 100`;
+}
 
 function headline(results: ModelResult[], summaries: Record<string, Summary>, threshold: number) {
   const risks = results.map((r) => r.risk);
@@ -51,14 +57,10 @@ function headline(results: ModelResult[], summaries: Record<string, Summary>, th
 export default function App() {
   const [profile, setProfile] = useState<Profile>(BASE_PROFILE);
   const [readings, setReadings] = useState({ bp: 1, lipids: 1 });
+  const [hasResults, setHasResults] = useState(false);
   const [threshold, setThreshold] = useState(0.075);
   const [view, setView] = useState<View>("dots");
   const [whatIf, setWhatIf] = useState<Partial<Profile>>({});
-  // The form starts open beside the results on wide screens, collapsed above them on phones.
-  const [inputsOpen, setInputsOpen] = useState(
-    () => typeof window === "undefined" || window.matchMedia(WIDE_SCREEN).matches,
-  );
-
   const problem = validate(profile);
   // Keep the last valid profile on screen while someone is mid-edit.
   const [lastValid, setLastValid] = useState(profile);
@@ -85,7 +87,10 @@ export default function App() {
   const changed: Profile = { ...shown, ...whatIf };
   const whatIfProblem = validate(changed);
   const after = whatIfProblem ? results : score(changed);
-  const whatIfMax = riskDomainMax([...results, ...after].map((r) => r.risk), threshold);
+  const whatIfMax = riskDomainMax(
+    [...results, ...after].map((r) => r.risk),
+    threshold,
+  );
   const asWhite = shown.ethnicity === "white" ? null : score({ ...shown, ethnicity: "white" });
 
   const updateProfile = (next: Profile) => {
@@ -93,52 +98,120 @@ export default function App() {
     setWhatIf({});
   };
 
-  return (
-    <div className="page">
-      <header className="masthead">
-        <p className="eyebrow">A risk-communication experiment</p>
-        <h1>How sure is your heart risk?</h1>
-        <p className="lede">
-          Doctors estimate your chance of a heart attack or stroke with risk calculators. But
-          different calculators give different answers, especially for South Asians. And a
-          single blood pressure or cholesterol reading is a noisy snapshot. This page shows both
-          kinds of uncertainty.
-        </p>
-      </header>
+  if (!hasResults) {
+    return (
+      <div className="intake-page">
+        <header className="intake-header">
+          <a className="brand" href="#" aria-label="Heart risk check home">
+            <span className="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32">
+                <path d="M16 27S5 20.2 5 11.8C5 7.9 7.7 5 11.4 5c2.1 0 3.8 1 4.6 2.5C16.8 6 18.5 5 20.6 5 24.3 5 27 7.9 27 11.8 27 20.2 16 27 16 27Z" />
+                <path d="M7.5 16h5l2-4 3.2 8 2.2-4H25" />
+              </svg>
+            </span>
+            <span>Heart Risk Check</span>
+          </a>
+          <span className="header-note">Educational tool</span>
+        </header>
 
-      <div className="layout">
-        <aside className="panel inputs" aria-label="Your numbers">
-          <details
-            className="inputs-toggle"
-            open={inputsOpen}
-            onToggle={(e) => setInputsOpen(e.currentTarget.open)}
-          >
-            <summary>
-              <div>
-                <h2>Your numbers</h2>
-                {!inputsOpen && (
-                  <p className="inputs-summary">
-                    {shown.age}, {shown.sex}, {ETHNICITY_LABELS[shown.ethnicity]}, BP{" "}
-                    {shown.systolicBp}, cholesterol {shown.totalCholesterol}/{shown.hdlCholesterol}
-                  </p>
-                )}
-              </div>
-            </summary>
+        <main className="intake-main">
+          <section className="intake-intro">
+            <p className="eyebrow">A clearer view of your heart health</p>
+            <h1>Understand your heart risk—with more context.</h1>
+            <p className="lede">
+              Three trusted calculators can give different answers, especially for South Asians.
+              This free check compares them and shows how certain each estimate really is.
+            </p>
+            <div className="trust-row" aria-label="About this assessment">
+              <span>
+                <b>4</b> short steps
+              </span>
+              <span>
+                <b>3–5</b> minutes
+              </span>
+              <span>
+                <b>0</b> data saved
+              </span>
+            </div>
+          </section>
+
+          <section className="assessment-card" aria-label="Heart risk assessment">
             <ProfileForm
               profile={profile}
               onChange={updateProfile}
               readings={readings}
               onReadingsChange={setReadings}
+              onComplete={() => {
+                if (!validate(profile)) {
+                  setHasResults(true);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
             />
-          </details>
-          {problem && (
-            <p className="form-error" role="alert">
-              {problem} Showing your last valid entry.
-            </p>
-          )}
-        </aside>
+            {problem && (
+              <p className="form-error intake-error" role="alert">
+                {problem}
+              </p>
+            )}
+          </section>
+        </main>
 
+        <footer className="intake-footer">
+          <strong>Educational only, not medical advice.</strong> Talk to a clinician about your
+          heart health.
+        </footer>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <header className="results-header">
+        <div>
+          <p className="eyebrow">Your heart risk overview</p>
+          <h1>How sure is your heart risk?</h1>
+        </div>
+        <button type="button" className="edit-answers" onClick={() => setHasResults(false)}>
+          Edit my answers
+        </button>
+      </header>
+
+      <div className="result-shell">
         <main>
+          <section className="results-guide" aria-labelledby="read-results">
+            <div className="guide-heading">
+              <p className="eyebrow">Start with the big picture</p>
+              <h2 id="read-results">Three answers, not one verdict</h2>
+              <p>
+                Each calculator looks at the same information through a different evidence base.
+                Read across the estimates before focusing on any single number.
+              </p>
+            </div>
+            <ol className="reading-steps">
+              <li>
+                <span>1</span>
+                <div>
+                  <strong>Estimate</strong>
+                  <p>Your modeled chance over the next 10 years.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <strong>Likely range</strong>
+                  <p>How much repeat blood pressure and cholesterol readings could shift it.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <strong>Decision line</strong>
+                  <p>A guideline comparison point—not a diagnosis or automatic treatment.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
           <section aria-labelledby="estimates">
             <h2 id="estimates" className="visually-hidden">
               Your estimates
@@ -152,17 +225,22 @@ export default function App() {
                 return (
                   <article key={r.model.key} className="card">
                     <h3>{r.model.name}</h3>
+                    <p className="metric-label">10-year estimate</p>
                     <p className="big">{pct(r.risk)}</p>
                     <p className="range">
                       likely {pct(low)}–{pct(high)}
+                    </p>
+                    <p className="frequency">
+                      <strong>{naturalFrequency(r.risk)}</strong> people with the same inputs may
+                      experience {r.model.outcomePlain} within 10 years.
                     </p>
                     <p className="origin">{r.model.origin}</p>
                     <p className="outcome">Predicts {r.model.outcome}</p>
                     {r.outOfRange.length > 0 && (
                       <p className="warn">
                         Your {listJoin(r.outOfRange.map(fieldName))}{" "}
-                        {r.outOfRange.length > 1 ? "are" : "is"} outside what this model was
-                        built on. Treat it as a rough extrapolation.
+                        {r.outOfRange.length > 1 ? "are" : "is"} outside what this model was built
+                        on. Treat it as a rough extrapolation.
                       </p>
                     )}
                   </article>
@@ -174,10 +252,28 @@ export default function App() {
           <section className="panel" aria-labelledby="how-sure">
             <h2 id="how-sure">How sure is that number?</h2>
             <p>
-              We re-scored you 4,000 times, each time imagining your blood pressure and
-              cholesterol had been measured on a different day. The spread is how far your risk
-              could move from measurement noise alone.
+              We re-scored you 4,000 times, each time imagining your blood pressure and cholesterol
+              had been measured on a different day. The spread is how far your risk could move from
+              measurement noise alone.
             </p>
+            <div className="uncertainty-key">
+              <div>
+                <span className="key-mark models" aria-hidden="true" />
+                <p>
+                  <strong>Model uncertainty</strong>
+                  The difference between calculators comes from who they studied, what outcomes they
+                  predict, and which factors they use.
+                </p>
+              </div>
+              <div>
+                <span className="key-mark readings" aria-hidden="true" />
+                <p>
+                  <strong>Measurement uncertainty</strong>
+                  The range within each calculator comes from ordinary variation in blood pressure
+                  and cholesterol readings.
+                </p>
+              </div>
+            </div>
             <div className="controls">
               <div className="segmented" role="group" aria-label="Show uncertainty as">
                 {(
@@ -199,10 +295,7 @@ export default function App() {
               </div>
               <label className="threshold-select">
                 <span>Compare against</span>
-                <select
-                  value={threshold}
-                  onChange={(e) => setThreshold(Number(e.target.value))}
-                >
+                <select value={threshold} onChange={(e) => setThreshold(Number(e.target.value))}>
                   {THRESHOLDS.map((t) => (
                     <option key={t.value} value={t.value}>
                       {t.label}: {t.note}
@@ -253,11 +346,14 @@ export default function App() {
                   const k = s.quantileDots(N_DOTS).filter((d) => d >= threshold).length;
                   return (
                     <p key={r.model.key}>
-                      <strong>{r.model.name}</strong> puts your chance of {r.model.outcomePlain}{" "}
-                      in the next 10 years at <b>{pct(r.risk)}</b>. If your blood pressure and
-                      cholesterol were measured again, it would usually land between {pct(low)}{" "}
-                      and {pct(high)}. In <b>{k} of {N_DOTS}</b> re-measurements, it's at or above{" "}
-                      {thresholdLabel(threshold)}.
+                      <strong>{r.model.name}</strong> puts your chance of {r.model.outcomePlain} in
+                      the next 10 years at <b>{pct(r.risk)}</b>. If your blood pressure and
+                      cholesterol were measured again, it would usually land between {pct(low)} and{" "}
+                      {pct(high)}. In{" "}
+                      <b>
+                        {k} of {N_DOTS}
+                      </b>{" "}
+                      re-measurements, it's at or above {thresholdLabel(threshold)}.
                     </p>
                   );
                 })}
@@ -353,6 +449,9 @@ export default function App() {
           <section className="panel" aria-labelledby="what-if">
             <h2 id="what-if">What if…</h2>
             <p>Drag the sliders to see how changes would shift each estimate.</p>
+            <p className="sensitivity-note">
+              This is a sensitivity check, not a prediction of how a treatment will affect you.
+            </p>
             <div className="sliders">
               {(
                 [
@@ -424,11 +523,11 @@ export default function App() {
           heart health.
         </p>
         <p>
-          Every model is implemented from its published equations and tested against its
-          authors' reference values. Measurement noise assumes a blood pressure reading varies
-          by about 12 mmHg between visits, and cholesterol by about 6–7%. This grew out of a
-          Harvard CS 2790r project on communicating risk uncertainty to patients. Probabilities
-          are shown exactly as computed, with no adjustment to make them feel more intuitive.
+          Every model is implemented from its published equations and tested against its authors'
+          reference values. Measurement noise assumes a blood pressure reading varies by about 12
+          mmHg between visits, and cholesterol by about 6–7%. This grew out of a Harvard CS 2790r
+          project on communicating risk uncertainty to patients. Probabilities are shown exactly as
+          computed, with no adjustment to make them feel more intuitive.
         </p>
         <p>
           <a href={REPO}>Source code, methods, and tests</a>
