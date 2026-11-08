@@ -4,7 +4,7 @@
 
 **Your 10-year heart risk depends on which calculator you ask, and on which day your blood pressure was measured.** This project makes both kinds of uncertainty visible, with a focus on South Asians, the group standard US calculators handle worst.
 
-**[Try it live →](https://anika-lakhani.github.io/south-asian-heart-risk/)**
+**[Try it live →](https://anika-lakhani.github.io/south-asian-heart-risk/)** · **[Read the case study](docs/CASE_STUDY.md)**
 
 <a href="https://anika-lakhani.github.io/south-asian-heart-risk/">
   <picture>
@@ -158,7 +158,8 @@ python ml/train.py      # writes ml/reports/ and ml/MODEL_CARD.md
 1. ✅ **Risk models + uncertainty engine.** PCE, PREVENT, and QRISK3 as a tested, vectorized package, plus Monte Carlo propagation of measurement noise.
 2. ✅ **Interactive web app.** Three uncertainty displays (animated quantile dotplots, interval bands, plain-language summaries), an ancestry comparison, and live what-if sliders, deployed to GitHub Pages.
 3. ✅ **ML analysis.** Reproducible pipeline on CDC BRFSS 2025, with survey-weighted evaluation, subgroup audit, per-person explanations, and a model card.
-4. **Write-up.** A short case study on the design decisions, with screenshots.
+4. ✅ **[Case study](docs/CASE_STUDY.md)** on the design decisions and what the data showed.
+5. **Next:** a five-person usability study, and calibration on South Asian-specific data (the MASALA study).
 
 ## Caveats
 
