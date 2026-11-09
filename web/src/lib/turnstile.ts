@@ -15,12 +15,12 @@ interface Turnstile {
       execution: "execute";
       appearance: "interaction-only";
       callback: (token: string) => void;
-      "error-callback": () => void;
+      "error-callback": (code: string) => void;
       "expired-callback": () => void;
     },
   ): string;
   execute(widgetId: string): void;
-  reset(widgetId: string): void;
+  remove(widgetId: string): void;
 }
 
 declare global {
@@ -46,6 +46,9 @@ function loadScript(): Promise<Turnstile> {
   return loading;
 }
 
+/** Thrown when Cloudflare can't confirm a person, as opposed to a network problem. */
+export class BotCheckError extends Error {}
+
 /** A fresh single-use token. Each saved section needs its own. */
 export async function turnstileToken(): Promise<string> {
   if (!TURNSTILE_SITE_KEY) throw new Error("Bot check isn't configured");
@@ -53,19 +56,21 @@ export async function turnstileToken(): Promise<string> {
   const container = document.createElement("div");
   container.className = "turnstile-slot";
   document.body.appendChild(container);
+  let id: string | undefined;
   try {
     return await new Promise<string>((resolve, reject) => {
-      const id = turnstile.render(container, {
+      id = turnstile.render(container, {
         sitekey: TURNSTILE_SITE_KEY,
         execution: "execute",
         appearance: "interaction-only",
         callback: resolve,
-        "error-callback": () => reject(new Error("Bot check failed")),
-        "expired-callback": () => reject(new Error("Bot check expired")),
+        "error-callback": (code) => reject(new BotCheckError(`Bot check failed (${code})`)),
+        "expired-callback": () => reject(new BotCheckError("Bot check expired")),
       });
       turnstile.execute(id);
     });
   } finally {
+    if (id) turnstile.remove(id);
     container.remove();
   }
 }

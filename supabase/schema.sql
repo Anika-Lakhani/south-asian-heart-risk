@@ -36,6 +36,8 @@ grant insert (donation_id, module, answers, app_version) on public.donations to 
 -- "Automatically expose new tables" may be off. It bypasses Row Level Security.
 grant usage on schema public to service_role;
 grant select on public.donations to service_role;
+-- The "donate" Edge Function saves rows with this role.
+grant insert (donation_id, module, answers, app_version) on public.donations to service_role;
 
 create policy "Anyone can add a donation"
   on public.donations for insert to anon

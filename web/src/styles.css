@@ -2786,7 +2786,8 @@ input[type="range"] {
 /* Turnstile's widget only appears when Cloudflare needs a click. */
 .turnstile-slot {
   position: fixed;
-  right: 16px;
+  left: 50%;
   bottom: 16px;
   z-index: 10;
+  transform: translateX(-50%);
 }

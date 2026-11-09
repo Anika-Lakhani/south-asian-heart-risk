@@ -112,7 +112,7 @@ flowchart LR
 [`supabase/functions/donate`](../supabase/functions/donate/index.ts), together with a
 single-use token from Cloudflare Turnstile. The function asks Cloudflare whether the token is
 genuine (without forwarding the visitor's IP), validates the answers' shape, and only then
-saves the row. Once [`004_require_bot_check.sql`](../supabase/004_require_bot_check.sql) has
+saves the row. Once [`005_require_bot_check.sql`](../supabase/005_require_bot_check.sql) has
 run, the website's key can no longer insert directly, so the function is the only way in.
 Turnstile's script loads only on the donation screens, never during the risk check.
 
@@ -134,7 +134,7 @@ Turnstile's script loads only on the donation screens, never during the risk che
 |---|---|
 | **Turn donations on** | Set the `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` repository variables (GitHub → Settings → Secrets and variables → Actions → Variables), then re-run the latest workflow. |
 | **Turn donations off** | Delete `VITE_SUPABASE_URL`, then re-run the workflow. The donation card and links disappear; nothing else changes. |
-| **Turn on the bot check** | 1) Create a Turnstile widget in Cloudflare for `anika-lakhani.github.io` and `localhost`. 2) In Supabase, create the `donate` Edge Function from [`index.ts`](../supabase/functions/donate/index.ts), turn off "Verify JWT", and add the `TURNSTILE_SECRET_KEY` secret. 3) Set the `VITE_TURNSTILE_SITE_KEY` repository variable and re-run the workflow. 4) After a successful test donation, run [`004_require_bot_check.sql`](../supabase/004_require_bot_check.sql). |
+| **Turn on the bot check** | 1) Create a Turnstile widget in Cloudflare for `anika-lakhani.github.io` and `localhost`. 2) In Supabase, create the `donate` Edge Function from [`index.ts`](../supabase/functions/donate/index.ts), turn off "Verify JWT", and add the `TURNSTILE_SECRET_KEY` secret. 3) Run [`004_function_can_insert.sql`](../supabase/004_function_can_insert.sql) so the function may save rows. 4) Set the `VITE_TURNSTILE_SITE_KEY` repository variable and re-run the workflow. 5) After a successful test donation, run [`005_require_bot_check.sql`](../supabase/005_require_bot_check.sql). |
 | **Try the flow without saving** | Open the site with `?donate=preview`. A banner confirms nothing is sent. |
 | **Publish a release** | See [Publishing a data release](../README.md#publishing-a-data-release). Review the CSV and notes before committing them. |
 | **First-time setup for releases** | Run [`supabase/003_release_reader.sql`](../supabase/003_release_reader.sql) once. With "Automatically expose new tables" off, even the secret key needs an explicit read grant; without it, releases fail with HTTP 403. |

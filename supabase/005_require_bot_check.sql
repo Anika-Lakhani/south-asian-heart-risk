@@ -1,5 +1,5 @@
--- Run once in Supabase's SQL Editor, ONLY after the "donate" Edge Function is
--- deployed and the site is using it (see docs/DONATIONS.md).
+-- Run once in Supabase's SQL Editor, ONLY after 004_function_can_insert.sql and a
+-- successful test donation through the "donate" function (see docs/DONATIONS.md).
 --
 -- Removes the website's ability to insert directly, so every donation has to pass
 -- the bot check in the "donate" function. That function saves rows with the

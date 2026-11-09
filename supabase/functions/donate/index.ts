@@ -6,7 +6,7 @@
 // Secrets: set TURNSTILE_SECRET_KEY under Edge Functions > Secrets.
 //
 // The website's role can't insert into the table directly once
-// supabase/004_require_bot_check.sql has been run, so this is the only way in.
+// supabase/005_require_bot_check.sql has been run, so this is the only way in.
 
 const SITEVERIFY = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const MODULES = new Set(["core", "southAsian", "context"]);

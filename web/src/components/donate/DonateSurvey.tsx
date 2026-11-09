@@ -11,6 +11,7 @@ import {
   type Module,
   type SouthAsianAnswers,
 } from "../../lib/donation";
+import { BotCheckError } from "../../lib/turnstile";
 
 type Stage = "core" | "offerSouthAsian" | "southAsian" | "offerContext" | "context" | "done";
 
@@ -169,8 +170,12 @@ export function DonateSurvey({ mode, heartHistory, intake, onFinish, finishLabel
       await submitModule(mode, donationId, module, answers);
       setSaved((s) => [...s, module]);
       go(next);
-    } catch {
-      setError("We couldn’t save that section. Check your connection and try again.");
+    } catch (e) {
+      setError(
+        e instanceof BotCheckError
+          ? "We couldn’t confirm you’re a person, so nothing was saved. Please try again, or try a different browser."
+          : "We couldn’t save that section. Check your connection and try again.",
+      );
     } finally {
       setSending(false);
     }
