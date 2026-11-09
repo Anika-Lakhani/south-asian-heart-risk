@@ -28,11 +28,12 @@ flowchart TD
     D --> F[Donation story page<br/>stats, privacy promises, unchecked consent]
     E --> F
     F -- Agrees --> G[Core questions, ~1 min]
-    G --> H[(Supabase<br/>add-only table)]
+    G --> V{{Bot check<br/>Cloudflare Turnstile}}
     G --> I[Optional: South Asian risks, ~2 min]
-    I --> H
+    I --> V
     I --> J[Optional: habits and background, ~2 min]
-    J --> H
+    J --> V
+    V --> H[(Supabase<br/>add-only table)]
     H --> K[Release script<br/>run by the maintainer]
     K --> L[Public CSV + release notes<br/>CC BY 4.0]
 ```
@@ -98,17 +99,28 @@ because it's the dataset's reason for existing. The script also:
 
 ```mermaid
 flowchart LR
-    W[Website<br/>publishable key] -- "INSERT only" --> T[(donations)]
+    W[Website<br/>publishable key] -- "answers + bot-check token" --> D[donate function]
+    D -- "verify token" --> C[Cloudflare Turnstile]
+    D -- "INSERT" --> T[(donations)]
     W -- "count only" --> F[contributor_count]
     F -. reads .-> T
     M[Maintainer<br/>secret key] -- "read all" --> T
     M --> R[release_dataset.py] --> P[Public CSV]
 ```
 
-- **The website uses the publishable key**, which is designed to be public. The database's
-  rules let it do exactly two things: add a row, and call `contributor_count()`. Reading,
-  changing, or deleting rows is denied. Row Level Security is on, and the website role is only
-  granted `INSERT` on four columns, so it can't even set the date.
+**The bot check.** Each section is sent to a small server function,
+[`supabase/functions/donate`](../supabase/functions/donate/index.ts), together with a
+single-use token from Cloudflare Turnstile. The function asks Cloudflare whether the token is
+genuine (without forwarding the visitor's IP), validates the answers' shape, and only then
+saves the row. Once [`004_require_bot_check.sql`](../supabase/004_require_bot_check.sql) has
+run, the website's key can no longer insert directly, so the function is the only way in.
+Turnstile's script loads only on the donation screens, never during the risk check.
+
+- **The website uses the publishable key**, which is designed to be public. With the bot check
+  enabled, it can do only two things: call the `donate` function, and call
+  `contributor_count()`. Reading, changing, deleting, and direct inserts are all denied. Row
+  Level Security is on, and inserts are only granted on four columns, so not even the function
+  can set the date.
 - **The secret key** can read everything. It lives only in Supabase and in the maintainer's
   terminal when running a release. It never appears in the website, the repo, or any chat.
 - **The public count** (`contributor_count()`) returns only a number, excludes test entries,
@@ -122,6 +134,7 @@ flowchart LR
 |---|---|
 | **Turn donations on** | Set the `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` repository variables (GitHub → Settings → Secrets and variables → Actions → Variables), then re-run the latest workflow. |
 | **Turn donations off** | Delete `VITE_SUPABASE_URL`, then re-run the workflow. The donation card and links disappear; nothing else changes. |
+| **Turn on the bot check** | 1) Create a Turnstile widget in Cloudflare for `anika-lakhani.github.io` and `localhost`. 2) In Supabase, create the `donate` Edge Function from [`index.ts`](../supabase/functions/donate/index.ts), turn off "Verify JWT", and add the `TURNSTILE_SECRET_KEY` secret. 3) Set the `VITE_TURNSTILE_SITE_KEY` repository variable and re-run the workflow. 4) After a successful test donation, run [`004_require_bot_check.sql`](../supabase/004_require_bot_check.sql). |
 | **Try the flow without saving** | Open the site with `?donate=preview`. A banner confirms nothing is sent. |
 | **Publish a release** | See [Publishing a data release](../README.md#publishing-a-data-release). Review the CSV and notes before committing them. |
 | **First-time setup for releases** | Run [`supabase/003_release_reader.sql`](../supabase/003_release_reader.sql) once. With "Automatically expose new tables" off, even the secret key needs an explicit read grant; without it, releases fail with HTTP 403. |
@@ -148,8 +161,8 @@ flowchart LR
   first heart attack plus specific lab values) could still narrow things down. Adding more
   fields to the k-anonymity check would cost a lot of detail, so this is a deliberate
   trade-off worth revisiting as the dataset grows.
-- **Spam.** Anyone can submit well-formed but made-up answers. The database rejects malformed
-  data, but there's no CAPTCHA yet. Each release's notes are the place to flag suspicious
+- **Determined fake answers.** The bot check stops automated submissions, but a person can
+  still type made-up answers by hand. Each release's notes are the place to flag suspicious
   patterns.
 - **Withdrawal.** Because donations are anonymous, a specific person's answers can't be found
   afterward, so they can't be removed. The privacy notice says this up front.
@@ -166,5 +179,6 @@ flowchart LR
 | **App flow** | [`web/src/App.test.tsx`](../web/src/App.test.tsx) walks every path in a simulated browser: the heart-history branch, consent gating, every optional section, and preview mode sending nothing. |
 | **Browser anonymization** | [`web/src/lib/donation.test.ts`](../web/src/lib/donation.test.ts): age bands, and a guard that tests can never be in live mode. |
 | **Database rules** | Tested in Postgres 18 (PGlite) and against the live project with the publishable key: reading, updating, deleting, backdating, read-back, unknown sections, oversized or malformed answers, and duplicates are all refused; a valid insert and the count work. |
+| **Bot-check function** | [`web/src/donateFunction.test.ts`](../web/src/donateFunction.test.ts): saves only after Cloudflare confirms the token, never forwards the IP or stores the token, rejects malformed input before contacting Cloudflare, and only allows the app's own sites. The lockdown SQL is tested in PGlite: direct inserts are refused afterward, while the function's role can insert but not backdate. |
 | **Release script** | [`tests/test_release.py`](../tests/test_release.py): test exclusion, section merging, unit conversion, fresh IDs, the 30-row minimum, the order of generalization, and the k ≥ 5 guarantee on 600 random donors. |
 | **Live site** | Checked after deploying: the donation card appears, consent starts unchecked, and the site's browser origin is allowed to reach the database. |

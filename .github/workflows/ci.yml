@@ -48,6 +48,8 @@ jobs:
           # key is designed to be public.
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_KEY: ${{ vars.VITE_SUPABASE_KEY }}
+          # Turns on the Cloudflare Turnstile bot check (see docs/DONATIONS.md).
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
           VITE_APP_VERSION: ${{ github.sha }}
       - uses: actions/upload-pages-artifact@v5
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

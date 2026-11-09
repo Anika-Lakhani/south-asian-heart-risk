@@ -1,3 +1,5 @@
+import { TURNSTILE_SITE_KEY } from "../lib/turnstile";
+
 const REPO = "https://github.com/Anika-Lakhani/south-asian-heart-risk";
 const UPDATED = "November 9, 2026";
 
@@ -70,6 +72,16 @@ export function PrivacyPage({ onBack }: { onBack: () => void }) {
           Like most web hosts, Supabase keeps routine access logs, which can include IP addresses,
           for one day. Those logs are never linked to or stored with your answers.
         </p>
+        {TURNSTILE_SITE_KEY && (
+          <p>
+            <strong>Bot check.</strong> To keep fake submissions out of the dataset, each donated
+            section first passes an invisible check by{" "}
+            <a href="https://www.cloudflare.com/turnstile-privacy-policy/">Cloudflare Turnstile</a>.
+            Cloudflare processes technical information about your browser and connection, including
+            your IP address, to run it. The check loads only on the donation screens, never during
+            the risk check, and its result isn’t stored with your answers.
+          </p>
+        )}
       </section>
 
       <section>

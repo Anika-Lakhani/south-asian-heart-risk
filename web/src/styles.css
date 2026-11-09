@@ -2782,3 +2782,11 @@ input[type="range"] {
 .contributors b {
   color: var(--intake-blue);
 }
+
+/* Turnstile's widget only appears when Cloudflare needs a click. */
+.turnstile-slot {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+}

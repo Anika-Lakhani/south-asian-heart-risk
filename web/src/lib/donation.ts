@@ -8,6 +8,7 @@
  */
 
 import type { AncestryKey } from "./ancestry";
+import { TURNSTILE_SITE_KEY, turnstileToken } from "./turnstile";
 import type { Profile } from "../models/profile";
 
 export type HeartHistory = "no" | "yes" | "unsure";
@@ -121,16 +122,26 @@ export async function submitModule(
   answers: object,
 ): Promise<void> {
   if (mode !== "live") return;
+  const row = { donation_id: donationId, module, answers, app_version: APP_VERSION };
+
+  // With the bot check configured, rows go through the "donate" function, which
+  // verifies the token before saving. The direct path is only for setups without it.
+  if (TURNSTILE_SITE_KEY) {
+    const token = await turnstileToken();
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/donate`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ ...row, token }),
+    });
+    if (!response.ok) throw new Error(`Saving failed with HTTP ${response.status}`);
+    return;
+  }
+
   const response = await fetch(`${SUPABASE_URL}/rest/v1/donations`, {
     method: "POST",
     // The website can't read rows back, so ask for no response body.
     headers: { ...headers(), Prefer: "return=minimal" },
-    body: JSON.stringify({
-      donation_id: donationId,
-      module,
-      answers,
-      app_version: APP_VERSION,
-    }),
+    body: JSON.stringify(row),
   });
   // 409 means this section was already saved (say, a double click), which is fine.
   if (!response.ok && response.status !== 409) {
