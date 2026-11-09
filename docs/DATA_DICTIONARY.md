@@ -15,9 +15,14 @@ answers are collected.
 - **Cross-sectional.** Heart history is what donors report at the time; there is no
   follow-up.
 - **Anonymized before release.** Test entries are removed, and every combination of
-  `age_band`, `sex`, `ancestry`, and `region` describes at least 5 donors. Rarer
-  combinations are merged into broader groups (for example `ancestry = south_asian_other`)
-  or withheld.
+  `age_band`, `sex`, `ancestry`, and `region` describes at least 5 donors. Only rows in rarer
+  combinations are generalized, least valuable detail first: region to `us` / `non_us`, age
+  to 10-year bands, region to `not_released`, narrow South Asian groups to
+  `south_asian_other`, then age to broad bands. Anyone still in a group smaller than 5 is
+  withheld. So a column can mix detailed and generalized values; each release's notes say
+  how many rows were generalized and withheld.
+- **Rows aren't linkable across releases.** `donation_id` is regenerated for every release,
+  and row order is shuffled.
 - **Empty means unanswered.** Every question beyond the risk check was optional.
 
 ## Metadata
@@ -32,9 +37,9 @@ answers are collected.
 
 | Field | Type | Values |
 |---|---|---|
-| `age_band` | text | 5-year band: `30-34` … `80-84` |
+| `age_band` | text | 5-year band (`30-34` … `80-84`); generalized rows use a 10-year band (`30-39`) or a broad band (`30-49`, `50-64`, `65-84`) |
 | `sex` | text | `female`, `male` (sex assigned at birth; the calculators use it) |
-| `ancestry` | text | `indian`, `pakistani`, `bangladeshi`, `sri_lankan`, `nepali`, `bhutanese`, `maldivian`, `other_asian`, `chinese`, `white`, `black_caribbean`, `black_african`, `other` |
+| `ancestry` | text | `indian`, `pakistani`, `bangladeshi`, `sri_lankan`, `nepali`, `bhutanese`, `maldivian`, `other_asian`, `chinese`, `white`, `black_caribbean`, `black_african`, `other`; generalized rows may read `south_asian_other` (Sri Lankan, Nepali, Bhutanese, or Maldivian) or `other` |
 | `heart_history` | text | Ever told of a heart attack, angina/CHD, stroke, or heart failure: `yes`, `no`, `unsure` |
 | `systolic_bp` | integer | mmHg |
 | `total_cholesterol` | integer | mg/dL |
@@ -79,7 +84,7 @@ answers are collected.
 | `drinks_per_week` | integer | Alcoholic drinks in a typical week |
 | `sleep_hours` | number | Typical night |
 | `education` | text | `highschool`, `somecollege`, `bachelors`, `graduate` |
-| `region` | text | `us_northeast`, `us_midwest`, `us_south`, `us_west`, `canada`, `uk`, `other` |
+| `region` | text | `us_northeast`, `us_midwest`, `us_south`, `us_west`, `canada`, `uk`, `other`; generalized rows may read `us`, `non_us`, or `not_released`; empty if the section was skipped |
 
 ## Comparing with BRFSS
 

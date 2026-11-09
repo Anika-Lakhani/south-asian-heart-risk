@@ -141,7 +141,7 @@ Every model is tested against reference values published by its authors:
 Measurement variability defaults are approximate literature values (SBP within-person SD ≈ 12 mmHg; total and HDL cholesterol biological CV ≈ 6% and 7%). They're configurable via `MeasurementVariability`.
 
 ```bash
-pytest                    # Python: 87 tests
+pytest                    # Python: 102 tests
 cd web && npm test        # TypeScript: 371 tests, including every intake and donation path
 ```
 
@@ -161,6 +161,18 @@ python ml/download.py   # ~65 MB from cdc.gov
 python ml/prepare.py
 python ml/train.py      # writes ml/reports/ and ml/MODEL_CARD.md
 ```
+
+## Publishing a data release
+
+[`scripts/release_dataset.py`](scripts/release_dataset.py) turns stored donations into an anonymized public CSV. It needs the project's **secret** key, so only the maintainer can run it:
+
+```bash
+export SUPABASE_URL=https://piezrusymgrmsdoqrwga.supabase.co
+export SUPABASE_SECRET_KEY=sb_secret_...   # from Supabase > Project Settings > API Keys; never commit
+python scripts/release_dataset.py          # writes data/releases/<YYYY-MM>/
+```
+
+It drops test entries, merges each donor's sections, and guarantees every combination of age band, sex, ancestry, and region describes at least 5 people. Rare combinations are generalized, least valuable detail first, and anything still rare is withheld. It refuses to write a release with fewer than 30 rows. Review the CSV and release notes, then commit them to publish.
 
 ## Roadmap
 
