@@ -30,7 +30,7 @@ const PROTECTIONS = [
   },
   {
     title: "No name, email, IP address, or location",
-    body: "We never ask who you are, and we don't record where you are.",
+    body: "We never ask who you are, and none of that is stored with your answers. (Our database host keeps routine access logs, which can include IP addresses, for one day. They're never linked to your answers.)",
   },
   {
     title: "Your age becomes a range",
