@@ -64,7 +64,7 @@ It also shows the same person scored as white (only QRISK3 changes), and what-if
 
 <img src="docs/screenshots/donate-story.png" alt="The donation page: cited statistics on South Asian heart risk and a diagram of twelve Asian groups collapsing into one 'Asian' box in US surveys.">
 
-**Anonymous data donation.** After their results, people can donate their answers to an open dataset with real South Asian categories, plus a few questions US surveys don't ask: age at first heart event, years since immigrating, and optional South Asian-specific risks like waist size, chewing tobacco, and Lp(a). Answers are anonymized in the browser (ages become 5-year bands; no name, email, or location), each section is saved on its own, and consent is an unchecked box. The database ([`supabase/`](supabase/)) only lets the website add rows, never read them, and the [privacy notice](https://anika-lakhani.github.io/south-asian-heart-risk/#privacy) and [data dictionary](docs/DATA_DICTIONARY.md) document exactly what's collected and released. **[How data donation works](docs/DONATIONS.md)** explains the storage, anonymization, and release pipeline end to end, including its known limits. Donations turn on when the `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` repository variables are set; until then, `?donate=preview` shows the flow and sends nothing.
+**Anonymous data donation.** After their results, people can donate their answers to an open dataset with real South Asian categories, plus a few questions US surveys don't ask: age at first heart event, years since immigrating, and optional South Asian-specific risks like waist size, chewing tobacco, and Lp(a). Answers are anonymized in the browser (ages become 5-year bands; no name, email, or location), each section is saved on its own, and consent is an unchecked box. Each section passes an invisible [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/) bot check, verified by a server function before anything is saved; the database ([`supabase/`](supabase/)) accepts rows only from that function and never lets the website read them. The [privacy notice](https://anika-lakhani.github.io/south-asian-heart-risk/#privacy) and [data dictionary](docs/DATA_DICTIONARY.md) document exactly what's collected and released. **[How data donation works](docs/DONATIONS.md)** explains the storage, anonymization, and release pipeline end to end, including its known limits. A daily [health check](.github/workflows/health.yml) keeps the free database active and emails the owner if anything stops answering. To try the flow without saving anything, open the app with `?donate=preview`.
 
 Add `?theme=dark` or `?theme=light` to the URL to override the system setting.
 
@@ -91,11 +91,13 @@ src/heartrisk/   Python reference implementation (NumPy, vectorized)
 tests/           Python tests against published reference values
 web/             The app: React + TypeScript, hand-built SVG charts, no chart library
   src/models/    TypeScript port of the models, tested for parity with Python
-scripts/         Generators that keep Python and TypeScript in sync
+scripts/         Python-to-TypeScript generators, and the dataset release script
 ml/              ML analysis of CDC survey data: download, prepare, train, model card
+supabase/        Donation database schema and the bot-check function (see its README)
+docs/            Case study, donation explainer, and data dictionary
 ```
 
-The models exist twice, once in Python and once in TypeScript, so the app can run entirely in the browser with no server. To keep the two from drifting, Python is the source of truth: [`scripts/export_web_models.py`](scripts/export_web_models.py) generates the QRISK3 coefficient tables for TypeScript, plus a fixture of 300 random profiles scored in Python. The TypeScript tests must reproduce every one to 12 decimal places, and a Python test fails if the generated files go stale.
+The models exist twice, once in Python and once in TypeScript, so the risk check runs entirely in the browser with no server; only optional donations touch one. To keep the two from drifting, Python is the source of truth: [`scripts/export_web_models.py`](scripts/export_web_models.py) generates the QRISK3 coefficient tables for TypeScript, plus a fixture of 300 random profiles scored in Python. The TypeScript tests must reproduce every one to 12 decimal places, and a Python test fails if the generated files go stale.
 
 Every push to `main` runs both test suites, then builds and deploys the app to GitHub Pages.
 
@@ -182,7 +184,8 @@ It drops test entries, merges each donor's sections, and guarantees every combin
 2. ✅ **Interactive web app.** Three uncertainty displays (animated quantile dotplots, interval bands, plain-language summaries), an ancestry comparison, and live what-if sliders, deployed to GitHub Pages.
 3. ✅ **ML analysis.** Reproducible pipeline on CDC BRFSS 2025, with survey-weighted evaluation, subgroup audit, per-person explanations, and a model card.
 4. ✅ **[Case study](docs/CASE_STUDY.md)** on the design decisions and what the data showed.
-5. **Next:** a five-person usability study, and calibration on South Asian-specific data (the MASALA study).
+5. ✅ **[Anonymous data donation](docs/DONATIONS.md)**: heart-history check, cited donation page, bot-checked submissions, add-only database, privacy notice, and a k-anonymity release script for an open dataset.
+6. **Next:** recruit donors through community partners, a five-person usability study, and calibration on South Asian-specific data (the MASALA study).
 
 ## Caveats
 
@@ -201,6 +204,8 @@ It drops test entries, merges each donor's sections, and guarantees every combin
 ## License
 
 MIT, except the files that implement ClinRisk's QRISK3-2017 algorithm, which are LGPL-3.0-or-later like the original: [`src/heartrisk/models/qrisk3.py`](src/heartrisk/models/qrisk3.py), [`web/src/models/qrisk3.ts`](web/src/models/qrisk3.ts), and [`web/src/models/qrisk3Coefficients.ts`](web/src/models/qrisk3Coefficients.ts). See [LICENSE](LICENSE) and [LICENSES/](LICENSES/).
+
+Released datasets in `data/releases/` are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## Disclaimer
 
