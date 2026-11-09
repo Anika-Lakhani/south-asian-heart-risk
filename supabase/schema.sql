@@ -26,7 +26,9 @@ create table public.donations (
 alter table public.donations enable row level security;
 
 -- The website may insert only these columns; received_month always comes from the
--- database default, so it can't be faked.
+-- database default, so it can't be faked. Granted explicitly, so this works even
+-- with "Automatically expose new tables" turned off.
+grant usage on schema public to anon;
 revoke all on public.donations from anon, authenticated;
 grant insert (donation_id, module, answers, app_version) on public.donations to anon;
 
