@@ -108,14 +108,8 @@ idea: **guide people in, then teach them how to read the answer.**
 
 <img src="screenshots/phone.png" alt="Quantile dotplots on a phone" width="300" align="right">
 
-Two smaller decisions mattered for trust. The design originally included a "share my data to
-help others" checkbox, but no database existed. In a health tool, a privacy promise you can't
-keep is worse than none, so I replaced it with a plain statement that nothing leaves the
-browser. I'm now building the real version: an opt-in donation flow that feeds an open,
-anonymized dataset with real South Asian categories. It asks first whether someone has had a
-heart event (the calculators don't apply if so), anonymizes answers in the browser, and stays
-hidden until the database behind it exists. I also made sure the whole flow works in dark mode, on phones, and with reduced
-motion, and that every chart has a text description and a table equivalent.
+Accessibility wasn't an afterthought: the whole flow works in dark mode, on phones, and with
+reduced motion, and every chart has a text description and a table equivalent.
 
 <br clear="right">
 
@@ -147,10 +141,58 @@ the opposite of what QRISK3 and the clinical research say. The subgroup audit fo
 problem: the model under-predicts for American Indian / Alaska Native and Black respondents,
 the kind of error that matters most in a risk tool.
 
+## Building the data that's missing
+
+The redesign included a "share my data to help others" checkbox, but nothing behind it: no
+database, no consent flow, no privacy policy. In a health tool, a privacy promise you can't
+keep is worse than none, so I removed it, then built the real thing.
+
+**It starts with a validity fix.** The first question is now whether someone has ever had a
+heart attack, angina, stroke, or heart failure. PCE, PREVENT, and QRISK3 were all built on
+people who hadn't, so a "yes" means any score would mislead. Those users get an explanation
+instead of a number, and an invitation to contribute their data.
+
+![The ineligible path](screenshots/ineligible.png)
+
+**The ask is persuasive without guilt.** Instead of a bare opt-in, a short page explains why the
+data matters, with every statistic cited: South Asians' first heart attacks come about six
+years earlier, the standard calculator scores them as white, and 0.17% of the NIH budget went
+to research on Asian Americans and Pacific Islanders over 26 years. A diagram shows twelve
+distinct groups collapsing into a single "Asian" box. The consent box starts unchecked, and
+saying no is a neutral "Back to my results".
+
+![The donation page](screenshots/donate-story.png)
+
+**Privacy is enforced in three places, so one failure doesn't expose anyone:**
+
+- **In the browser:** exact age becomes a 5-year band, and nothing identifying is ever asked.
+- **In the database:** the public website can only *add* rows, never read them. The database
+  records only the month a donation arrived, and a bot check verifies each submission on the
+  server before it's saved.
+- **At release:** every combination of age band, sex, ancestry, and region must describe at
+  least 5 people, and rare combinations are coarsened step by step.
+
+**The order of those steps is a values decision.** My first version coarsened rare South Asian
+groups first, but that detail is the dataset's whole reason for existing. Reordering so region
+and age give way first took the share of donors who could be released at a 600-person sample
+from 50% to about 94%, and kept far more Sri Lankan and Nepali donors' exact ancestry.
+
+**I tested the security the way an attacker would.** Against the live database, with the
+website's public key, I tried to read, change, delete, backdate, and flood it. Every attempt
+was refused, and valid donations still saved. Two real bugs surfaced along the way, both now
+covered by tests: a local settings file briefly let the test suite send a row to the real
+database, and a Supabase permission default blocked the release script with a 403.
+
+Everything is documented in plain language: a [privacy notice](https://anika-lakhani.github.io/south-asian-heart-risk/#privacy),
+a [data dictionary](DATA_DICTIONARY.md) for researchers, and an end-to-end
+[explainer](DONATIONS.md) that's candid about what it doesn't protect against.
+
 ## Quality
 
-- **450 automated tests**: published reference values for all three calculators, Python-to-
-  TypeScript parity, the BRFSS recoding rules, and full intake-to-results interaction tests.
+- **490 automated tests**: published reference values for all three calculators, Python-to-
+  TypeScript parity, the BRFSS recoding rules, every intake and donation path, the bot-check
+  function, and the release script's anonymization guarantee.
+- **Security rules tested twice**: in a local Postgres and against the live database.
 - **CI on every push** runs both suites, then builds and deploys the site.
 - **Licensing handled properly.** QRISK3 is LGPL, so those files carry that license and the
   disclaimer ClinRisk requires wherever its scores appear.
@@ -160,9 +202,12 @@ the kind of error that matters most in a risk tool.
 1. **A small usability study.** The original project was a user study. Five participants, one
    example profile each, three questions: *What's your risk? How sure is it? Would you talk to
    a doctor?* The measure that matters is whether people read the dotplot correctly.
-2. **South Asian-specific data.** The MASALA study follows South Asian Americans specifically
+   It would also show whether the donation page persuades without pressuring.
+2. **Recruit donors through community partners**: South Asian student associations, community
+   organizations, and places of worship. The dataset becomes useful at a few hundred donors.
+3. **South Asian-specific data.** The MASALA study follows South Asian Americans specifically
    and would let me test calibration for the group this tool is about.
-3. **Clinician input** on whether the results page would help or hinder a real conversation
+4. **Clinician input** on whether the results page would help or hinder a real conversation
    about statins.
 
 ---

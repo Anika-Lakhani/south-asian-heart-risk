@@ -62,7 +62,9 @@ The [app](https://anika-lakhani.github.io/south-asian-heart-risk/) has two parts
 
 It also shows the same person scored as white (only QRISK3 changes), and what-if sliders that update every model live as you drag. The headline sentence is generated from your results, so it says what matters for *you* ("the calculators disagree about which side of the line you're on"). Everything follows the system light/dark theme, using blue palettes that pass colorblind-safety and contrast checks in both modes. Every chart has an accessible text description and a table twin, and animation respects reduced-motion settings.
 
-**Anonymous data donation (in preview).** After their results, people can donate their answers to an open dataset with real South Asian categories, plus a few questions US surveys don't ask: age at first heart event, years since immigrating, and optional South Asian-specific risks like waist size, chewing tobacco, and Lp(a). Answers are anonymized in the browser (ages become 5-year bands; no name, email, or location), each section is saved on its own, and consent is an unchecked box. The database ([`supabase/`](supabase/)) only lets the website add rows, never read them, and the [privacy notice](https://anika-lakhani.github.io/south-asian-heart-risk/#privacy) and [data dictionary](docs/DATA_DICTIONARY.md) document exactly what's collected and released. **[How data donation works](docs/DONATIONS.md)** explains the storage, anonymization, and release pipeline end to end, including its known limits. Donations turn on when the `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` repository variables are set; until then, `?donate=preview` shows the flow and sends nothing.
+<img src="docs/screenshots/donate-story.png" alt="The donation page: cited statistics on South Asian heart risk and a diagram of twelve Asian groups collapsing into one 'Asian' box in US surveys.">
+
+**Anonymous data donation.** After their results, people can donate their answers to an open dataset with real South Asian categories, plus a few questions US surveys don't ask: age at first heart event, years since immigrating, and optional South Asian-specific risks like waist size, chewing tobacco, and Lp(a). Answers are anonymized in the browser (ages become 5-year bands; no name, email, or location), each section is saved on its own, and consent is an unchecked box. The database ([`supabase/`](supabase/)) only lets the website add rows, never read them, and the [privacy notice](https://anika-lakhani.github.io/south-asian-heart-risk/#privacy) and [data dictionary](docs/DATA_DICTIONARY.md) document exactly what's collected and released. **[How data donation works](docs/DONATIONS.md)** explains the storage, anonymization, and release pipeline end to end, including its known limits. Donations turn on when the `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` repository variables are set; until then, `?donate=preview` shows the flow and sends nothing.
 
 Add `?theme=dark` or `?theme=light` to the URL to override the system setting.
 
@@ -142,7 +144,7 @@ Measurement variability defaults are approximate literature values (SBP within-p
 
 ```bash
 pytest                    # Python: 102 tests
-cd web && npm test        # TypeScript: 371 tests, including every intake and donation path
+cd web && npm test        # TypeScript: 388 tests, including every intake and donation path
 ```
 
 ## What US survey data says (ML analysis)
