@@ -1,14 +1,15 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import { QuantileDotplots } from "./components/Dotplot";
 import { DonateCard } from "./components/donate/DonateCard";
 import { DonateStory } from "./components/donate/DonateStory";
 import { DonateSurvey } from "./components/donate/DonateSurvey";
+import { PrivacyPage } from "./components/PrivacyPage";
 import { ProfileForm } from "./components/ProfileForm";
 import { RangeBands } from "./components/RangeBands";
 import { WhatIfChart } from "./components/WhatIf";
 import { ancestryOption, defaultAncestryFor, type AncestryKey } from "./lib/ancestry";
-import { donationMode, intakeRecord, type HeartHistory } from "./lib/donation";
+import { contributorCount, donationMode, intakeRecord, type HeartHistory } from "./lib/donation";
 import { BASE_PROFILE, ETHNICITY_LABELS, THRESHOLDS } from "./lib/examples";
 import { fieldName, listJoin, pct, thresholdLabel } from "./lib/format";
 import { riskDomainMax } from "./lib/scale";
@@ -68,6 +69,20 @@ export default function App() {
   const [ancestry, setAncestry] = useState<AncestryKey>(defaultAncestryFor(BASE_PROFILE.ethnicity));
   const [donate, setDonate] = useState<null | "story" | "survey">(null);
   const [mode] = useState(() => donationMode());
+  const [contributors, setContributors] = useState<number | null>(null);
+  const [privacyOpen, setPrivacyOpen] = useState(
+    () => typeof window !== "undefined" && window.location.hash === "#privacy",
+  );
+
+  useEffect(() => {
+    const sync = () => setPrivacyOpen(window.location.hash === "#privacy");
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
+
+  useEffect(() => {
+    if (mode === "live") contributorCount().then(setContributors);
+  }, [mode]);
   const [threshold, setThreshold] = useState(0.075);
   const [view, setView] = useState<View>("dots");
   const [whatIf, setWhatIf] = useState<Partial<Profile>>({});
@@ -122,6 +137,24 @@ export default function App() {
   };
   const risks = results.map((r) => r.risk);
 
+  // Shown only once there are enough donors for the number to mean something.
+  const shownContributors = contributors !== null && contributors >= 10 ? contributors : null;
+
+  if (privacyOpen) {
+    return (
+      <div className="intake-page donate-page">
+        <main className="donate-main">
+          <PrivacyPage
+            onBack={() => {
+              history.replaceState(null, "", window.location.pathname + window.location.search);
+              setPrivacyOpen(false);
+            }}
+          />
+        </main>
+      </div>
+    );
+  }
+
   if (donate) {
     return (
       <div className="intake-page donate-page">
@@ -142,6 +175,7 @@ export default function App() {
             <DonateStory
               spread={hadHeartEvent ? null : { low: Math.min(...risks), high: Math.max(...risks) }}
               preview={mode === "preview"}
+              contributors={shownContributors}
               onStart={() => {
                 setDonate("survey");
                 window.scrollTo({ top: 0 });
@@ -233,7 +267,7 @@ export default function App() {
 
         <footer className="intake-footer">
           <strong>Educational only, not medical advice.</strong> Talk to a clinician about your
-          heart health.
+          heart health. <a href="#privacy">Privacy</a>
         </footer>
       </div>
     );
@@ -547,6 +581,7 @@ export default function App() {
           {canDonate && (
             <DonateCard
               southAsian={ancestryOption(ancestry).southAsian}
+              contributors={shownContributors}
               onDonate={openDonation}
             />
           )}
@@ -635,7 +670,7 @@ export default function App() {
           computed, with no adjustment to make them feel more intuitive.
         </p>
         <p>
-          <a href={REPO}>Source code, methods, and tests</a>
+          <a href={REPO}>Source code, methods, and tests</a> · <a href="#privacy">Privacy</a>
         </p>
         <p className="fine">QRISK3 disclaimer: {QRISK3_DISCLAIMER}</p>
       </footer>

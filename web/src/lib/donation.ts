@@ -2,9 +2,9 @@
  * Anonymous data donation: what's collected, how it's anonymized before it leaves
  * the browser, and how it's sent.
  *
- * Nothing is sent until someone explicitly opts in. Until a database is connected,
- * the whole flow is hidden unless the page is opened with ?donate=preview, and in
- * preview mode nothing is sent at all.
+ * Nothing is sent until someone explicitly opts in. Until a database is configured
+ * (VITE_SUPABASE_URL and VITE_SUPABASE_KEY at build time), the whole flow is hidden
+ * unless the page is opened with ?donate=preview, and in preview mode nothing is sent.
  */
 
 import type { AncestryKey } from "./ancestry";
@@ -92,13 +92,28 @@ export function intakeRecord(profile: Profile, ancestry: AncestryKey, heartHisto
 
 export type DonationMode = "off" | "preview" | "live";
 
-/** Live once a database is configured; until then, only reachable with ?donate=preview. */
-export function donationMode(search = typeof window === "undefined" ? "" : window.location.search): DonationMode {
-  if (import.meta.env.VITE_DONATIONS_URL) return "live";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+// The publishable key is designed to be public: the database's rules only let it
+// add rows and read the contributor count.
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY as string | undefined;
+/** Tags each row with the build that sent it; "test" builds are excluded from releases. */
+const APP_VERSION = (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "dev";
+
+/** Live once the database is configured; until then, only reachable with ?donate=preview. */
+export function donationMode(
+  search = typeof window === "undefined" ? "" : window.location.search,
+): DonationMode {
+  // Tests must never reach the real database, whatever env files exist locally.
+  if (SUPABASE_URL && SUPABASE_KEY && import.meta.env.MODE !== "test") return "live";
   return new URLSearchParams(search).get("donate") === "preview" ? "preview" : "off";
 }
 
-/** Send one module. In preview mode this does nothing, and the UI says so. */
+const headers = () => ({
+  apikey: SUPABASE_KEY ?? "",
+  "Content-Type": "application/json",
+});
+
+/** Send one section. In preview mode this does nothing, and the UI says so. */
 export async function submitModule(
   mode: DonationMode,
   donationId: string,
@@ -106,6 +121,34 @@ export async function submitModule(
   answers: object,
 ): Promise<void> {
   if (mode !== "live") return;
-  // Connected in the next step, once the database exists.
-  throw new Error(`Donations aren't connected yet (${donationId}, ${module}, ${Object.keys(answers).length} fields)`);
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/donations`, {
+    method: "POST",
+    // The website can't read rows back, so ask for no response body.
+    headers: { ...headers(), Prefer: "return=minimal" },
+    body: JSON.stringify({
+      donation_id: donationId,
+      module,
+      answers,
+      app_version: APP_VERSION,
+    }),
+  });
+  // 409 means this section was already saved (say, a double click), which is fine.
+  if (!response.ok && response.status !== 409) {
+    throw new Error(`Saving failed with HTTP ${response.status}`);
+  }
+}
+
+/** How many people have donated, or null if unavailable. */
+export async function contributorCount(): Promise<number | null> {
+  if (donationMode("") !== "live") return null;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/contributor_count`, {
+      method: "POST",
+      headers: headers(),
+      body: "{}",
+    });
+    return response.ok ? Number(await response.json()) : null;
+  } catch {
+    return null;
+  }
 }

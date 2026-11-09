@@ -2699,3 +2699,86 @@ input[type="range"] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ------------------------------------------------------- privacy page */
+
+.privacy-page {
+  max-width: 700px;
+  color: var(--in-text-2);
+  line-height: 1.65;
+}
+
+.privacy-page .eyebrow {
+  color: var(--intake-blue-dark);
+}
+
+.privacy-page h1 {
+  margin: 8px 0 12px;
+  color: var(--intake-navy);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.privacy-page .lede {
+  font-size: 1.08rem;
+}
+
+.privacy-page .updated {
+  color: var(--in-muted);
+  font-size: 0.82rem;
+}
+
+.privacy-page section {
+  margin-top: 30px;
+}
+
+.privacy-page h2 {
+  margin: 0 0 8px;
+  color: var(--intake-navy);
+  font-size: 1.2rem;
+}
+
+.privacy-page h3 {
+  margin: 16px 0 4px;
+  color: var(--intake-navy);
+  font-size: 0.98rem;
+}
+
+.privacy-page ul {
+  padding-left: 20px;
+}
+
+.privacy-page li + li {
+  margin-top: 6px;
+}
+
+.privacy-page strong {
+  color: var(--intake-navy);
+}
+
+.privacy-page a,
+.protect-more a,
+.intake-footer a {
+  color: var(--intake-blue-dark);
+  font-weight: 600;
+}
+
+.privacy-page > button {
+  margin-top: 36px;
+}
+
+.protect-more {
+  margin: 18px 0 0;
+  font-size: 0.88rem;
+}
+
+.contributors {
+  margin-top: 14px;
+  color: var(--in-text-2);
+  font-size: 0.95rem;
+}
+
+.contributors b {
+  color: var(--intake-blue);
+}

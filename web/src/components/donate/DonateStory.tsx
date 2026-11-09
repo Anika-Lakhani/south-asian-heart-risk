@@ -7,6 +7,8 @@ interface Props {
   /** The person's own calculator range, when they came from their results. */
   spread: { low: number; high: number } | null;
   preview: boolean;
+  /** Shown once there are enough donors to be meaningful. */
+  contributors: number | null;
   onStart: () => void;
   onCancel: () => void;
   cancelLabel: string;
@@ -50,7 +52,14 @@ const PROTECTIONS = [
   },
 ];
 
-export function DonateStory({ spread, preview, onStart, onCancel, cancelLabel }: Props) {
+export function DonateStory({
+  spread,
+  preview,
+  contributors,
+  onStart,
+  onCancel,
+  cancelLabel,
+}: Props) {
   const [agreed, setAgreed] = useState(false);
   const low = spread?.low ?? 0.024;
   const high = spread?.high ?? 0.075;
@@ -72,6 +81,11 @@ export function DonateStory({ spread, preview, onStart, onCancel, cancelLabel }:
           calculators and data that guide our care barely see us. A few minutes of your anonymous
           answers can help change that.
         </p>
+        {contributors !== null && (
+          <p className="contributors">
+            <b>{contributors.toLocaleString()}</b> people have donated so far.
+          </p>
+        )}
       </header>
 
       <section className="donate-section" aria-labelledby="risk-real">
@@ -211,6 +225,9 @@ export function DonateStory({ spread, preview, onStart, onCancel, cancelLabel }:
             </li>
           ))}
         </ul>
+        <p className="protect-more">
+          <a href="#privacy">Read the full privacy details</a>
+        </p>
       </section>
 
       <section className="donate-consent" aria-label="Consent">

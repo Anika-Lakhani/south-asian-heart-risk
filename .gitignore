@@ -30,3 +30,4 @@ web/*.tsbuildinfo
 
 # ML data (downloaded by ml/download.py)
 ml/data/
+web/.env*.local

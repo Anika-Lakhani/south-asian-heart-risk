@@ -38,15 +38,17 @@ create policy "Anyone can add a donation"
 
 -- No select, update, or delete policies exist, so the website can't do any of those.
 
--- The one public number: how many people have contributed.
-create function public.contributor_count()
+-- The one public number: how many people have contributed (test entries excluded).
+create or replace function public.contributor_count()
 returns bigint
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  select count(distinct donation_id) from public.donations;
+  select count(distinct donation_id)
+  from public.donations
+  where app_version not like 'test%';
 $$;
 
 revoke all on function public.contributor_count() from public;

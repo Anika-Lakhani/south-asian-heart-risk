@@ -1,10 +1,12 @@
 interface Props {
   southAsian: boolean;
+  /** Shown once there are enough donors to be meaningful. */
+  contributors: number | null;
   onDonate: () => void;
 }
 
 /** Shown right after "Why the calculators disagree", when the case for better data is clearest. */
-export function DonateCard({ southAsian, onDonate }: Props) {
+export function DonateCard({ southAsian, contributors, onDonate }: Props) {
   return (
     <section className="donate-card" aria-labelledby="donate-card-title">
       <div>
@@ -17,6 +19,7 @@ export function DonateCard({ southAsian, onDonate }: Props) {
         <p>
           Add your anonymous answers to a free public dataset for researchers. It takes about a
           minute, and nothing identifies you.
+          {contributors !== null && ` ${contributors.toLocaleString()} people have donated so far.`}
         </p>
       </div>
       <button type="button" className="primary-button" onClick={onDonate}>
