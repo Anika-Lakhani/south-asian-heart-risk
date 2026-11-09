@@ -28,6 +28,7 @@ import json
 import os
 import random
 import ssl
+import urllib.error
 import urllib.request
 import uuid
 from collections import Counter
@@ -165,8 +166,19 @@ def fetch_rows(url: str, key: str, page: int = 1000) -> list[dict]:
             f"{url}/rest/v1/donations?select=*&order=id&limit={page}&offset={len(rows)}",
             headers={"apikey": key, "Authorization": f"Bearer {key}"},
         )
-        with urllib.request.urlopen(request, context=context) as response:
-            batch = json.load(response)
+        try:
+            with urllib.request.urlopen(request, context=context) as response:
+                batch = json.load(response)
+        except urllib.error.HTTPError as error:
+            detail = error.read().decode(errors="replace")[:300]
+            hints = {
+                401: "The key was rejected. Check SUPABASE_SECRET_KEY is the sb_secret_ key.",
+                403: "The key's role can't read the table. Run supabase/003_release_reader.sql.",
+            }
+            raise SystemExit(
+                f"Supabase returned HTTP {error.code}. "
+                f"{hints.get(error.code, '')}\nDetails: {detail}"
+            ) from None
         rows.extend(batch)
         if len(batch) < page:
             return rows

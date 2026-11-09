@@ -124,6 +124,7 @@ flowchart LR
 | **Turn donations off** | Delete `VITE_SUPABASE_URL`, then re-run the workflow. The donation card and links disappear; nothing else changes. |
 | **Try the flow without saving** | Open the site with `?donate=preview`. A banner confirms nothing is sent. |
 | **Publish a release** | See [Publishing a data release](../README.md#publishing-a-data-release). Review the CSV and notes before committing them. |
+| **First-time setup for releases** | Run [`supabase/003_release_reader.sql`](../supabase/003_release_reader.sql) once. With "Automatically expose new tables" off, even the secret key needs an explicit read grant; without it, releases fail with HTTP 403. |
 | **Check the connection** | `python scripts/release_dataset.py --min-rows 0 --name dry-run` with the secret key set. It should report 0 real donations if only tests exist. Delete the `dry-run` folder afterwards. |
 | **Remove test rows** (optional) | In Supabase's Table Editor, filter `app_version` starting with `test` and delete them. Releases and the count ignore them anyway. |
 | **Rotate a leaked key** | In Supabase → Project Settings → API Keys, create a new key and revoke the old one. For the publishable key, also update the repository variable. |

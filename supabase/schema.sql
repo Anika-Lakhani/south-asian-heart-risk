@@ -32,6 +32,11 @@ grant usage on schema public to anon;
 revoke all on public.donations from anon, authenticated;
 grant insert (donation_id, module, answers, app_version) on public.donations to anon;
 
+-- The secret key's role reads everything for releases. Granted explicitly because
+-- "Automatically expose new tables" may be off. It bypasses Row Level Security.
+grant usage on schema public to service_role;
+grant select on public.donations to service_role;
+
 create policy "Anyone can add a donation"
   on public.donations for insert to anon
   with check (true);
