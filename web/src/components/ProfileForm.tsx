@@ -1,7 +1,14 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
-import { CONDITION_LABELS, ETHNICITY_LABELS, EXAMPLES, SMOKING_LABELS } from "../lib/examples";
-import { CONDITIONS, ETHNICITIES, SMOKING, type Profile } from "../models/profile";
+import {
+  ANCESTRY_OPTIONS,
+  ancestryOption,
+  defaultAncestryFor,
+  type AncestryKey,
+} from "../lib/ancestry";
+import type { DonationMode, HeartHistory } from "../lib/donation";
+import { CONDITION_LABELS, EXAMPLES, SMOKING_LABELS } from "../lib/examples";
+import { CONDITIONS, SMOKING, type Profile } from "../models/profile";
 
 interface Props {
   profile: Profile;
@@ -11,7 +18,18 @@ interface Props {
   onComplete: () => void;
   /** Step to open on, e.g. Review when coming back from the results to edit. */
   initialStep?: number;
+  heartHistory: HeartHistory | null;
+  onHeartHistoryChange: (value: HeartHistory) => void;
+  ancestry: AncestryKey;
+  onAncestryChange: (value: AncestryKey) => void;
+  donationMode: DonationMode;
 }
+
+const HEART_HISTORY_OPTIONS = [
+  { value: "no", label: "No" },
+  { value: "yes", label: "Yes" },
+  { value: "unsure", label: "Not sure" },
+] as const;
 
 const STEPS = [
   { title: "About you", note: "The basics" },
@@ -138,8 +156,17 @@ export function ProfileForm({
   onReadingsChange,
   onComplete,
   initialStep = 0,
+  heartHistory,
+  onHeartHistoryChange,
+  ancestry,
+  onAncestryChange,
+  donationMode,
 }: Props) {
   const [step, setStep] = useState(initialStep);
+  const [heartHistoryMissing, setHeartHistoryMissing] = useState(false);
+  const [whyOpen, setWhyOpen] = useState(false);
+  const hadHeartEvent = heartHistory === "yes";
+  const canDonate = donationMode !== "off";
   const [bmiOpen, setBmiOpen] = useState(false);
   const [bmiUnits, setBmiUnits] = useState<"us" | "metric">("us");
   const [heightFeet, setHeightFeet] = useState(5);
@@ -163,6 +190,11 @@ export function ProfileForm({
   };
 
   const goNext = () => {
+    if (step === 0 && heartHistory === null) {
+      setHeartHistoryMissing(true);
+      document.getElementById("heart-history")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
     if (step < STEPS.length - 1) {
       setStep(step + 1);
       document.querySelector(".assessment-card")?.scrollIntoView({ behavior: "smooth" });
@@ -203,6 +235,83 @@ export function ProfileForm({
             <p className="step-intro">
               Risk changes with age, sex, and ancestry. Your information stays in your browser.
             </p>
+            <fieldset className="heart-history" id="heart-history">
+              <legend>
+                Has a doctor ever told you that you had a heart attack, angina or coronary heart
+                disease, a stroke, or heart failure?
+              </legend>
+              <p className="field-hint">
+                The calculators are only accurate for people who haven’t had a heart event.
+              </p>
+              <div className="option-cards three-up">
+                {HEART_HISTORY_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={heartHistory === option.value}
+                    onClick={() => {
+                      onHeartHistoryChange(option.value);
+                      setHeartHistoryMissing(false);
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {heartHistoryMissing && (
+                <p className="form-error" role="alert">
+                  Please answer this question to continue.
+                </p>
+              )}
+            </fieldset>
+
+            {hadHeartEvent ? (
+              <div className="ineligible" role="status">
+                <p>
+                  Because you’ve already experienced a heart event, calculating your heart risk
+                  with these calculators will give you misleading results, as the calculators were
+                  designed to be used before your first heart event. To monitor and reduce your
+                  heart risk, please instead work with your doctor.
+                </p>
+                {canDonate && (
+                  <p>
+                    <strong>But you can still help our cause:</strong> South Asian heart data is
+                    badly missing from US research. Please consider donating your (anonymized)
+                    data towards better research for South Asian hearts.
+                  </p>
+                )}
+                <div className="ineligible-actions">
+                  {canDonate && (
+                    <button type="button" className="primary-button" onClick={goNext}>
+                      Donate my data <span aria-hidden="true">→</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="link-button"
+                    aria-expanded={whyOpen}
+                    onClick={() => setWhyOpen(!whyOpen)}
+                  >
+                    {whyOpen ? "Hide explanation" : "Learn why"}
+                  </button>
+                </div>
+                {whyOpen && (
+                  <div className="ineligible-why">
+                    <p>
+                      PCE, PREVENT, and QRISK3 were all built by following people who had never had
+                      heart disease and counting who developed it over 10 years. They answer “how
+                      likely is a first heart event?”
+                    </p>
+                    <p>
+                      After a first event, risk is already known to be high, and the goal changes
+                      to preventing another one. Doctors call this secondary prevention, and it
+                      usually means treatment no matter what a calculator would say. Plugging your
+                      numbers in anyway would understate your risk.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
             <div className="form-stack">
               <NumberField
                 label="How old are you?"
@@ -233,17 +342,32 @@ export function ProfileForm({
                   QRISK3 accounts for differences between South Asian groups.
                 </span>
                 <select
-                  value={profile.ethnicity}
-                  onChange={(event) => set("ethnicity", event.target.value as Profile["ethnicity"])}
+                  value={ancestry}
+                  onChange={(event) => {
+                    const option = ancestryOption(event.target.value as AncestryKey);
+                    onAncestryChange(option.key);
+                    set("ethnicity", option.ethnicity);
+                  }}
                 >
-                  {ETHNICITIES.map((ethnicity) => (
-                    <option key={ethnicity} value={ethnicity}>
-                      {ETHNICITY_LABELS[ethnicity]}
-                    </option>
-                  ))}
+                  <optgroup label="South Asian">
+                    {ANCESTRY_OPTIONS.filter((o) => o.southAsian).map((o) => (
+                      <option key={o.key} value={o.key}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Other ancestry">
+                    {ANCESTRY_OPTIONS.filter((o) => !o.southAsian).map((o) => (
+                      <option key={o.key} value={o.key}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
               </label>
             </div>
+            )}
+            {!hadHeartEvent && (
             <details className="sample-profiles">
               <summary>Don’t have your numbers? Try an example</summary>
               <div className="chips">
@@ -252,13 +376,19 @@ export function ProfileForm({
                     key={example.label}
                     type="button"
                     className="chip"
-                    onClick={() => onChange(example.profile)}
+                    onClick={() => {
+                      onChange(example.profile);
+                      onAncestryChange(defaultAncestryFor(example.profile.ethnicity));
+                      onHeartHistoryChange("no");
+                      setHeartHistoryMissing(false);
+                    }}
                   >
                     {example.label}
                   </button>
                 ))}
               </div>
             </details>
+            )}
           </section>
         )}
 
@@ -480,15 +610,19 @@ export function ProfileForm({
 
         {step === 3 && (
           <section aria-labelledby="step-review">
-            <h2 id="step-review">You’re ready to see your estimate</h2>
+            <h2 id="step-review">
+              {hadHeartEvent ? "Check your answers" : "You’re ready to see your estimate"}
+            </h2>
             <p className="step-intro">
-              Take a quick look. You can always come back and change these details.
+              {hadHeartEvent
+                ? "Take a quick look. Next come a few short research questions."
+                : "Take a quick look. You can always come back and change these details."}
             </p>
             <dl className="review-grid">
               <div>
                 <dt>About you</dt>
                 <dd>
-                  {profile.age}, {profile.sex}, {ETHNICITY_LABELS[profile.ethnicity]}
+                  {profile.age}, {profile.sex}, {ancestryOption(ancestry).label}
                 </dd>
                 <button type="button" onClick={() => setStep(0)}>
                   Edit
@@ -578,10 +712,17 @@ export function ProfileForm({
           ) : (
             <span />
           )}
-          <button type="button" className="primary-button" onClick={goNext}>
-            {step === STEPS.length - 1 ? "See my heart risk" : "Continue"}
-            <span aria-hidden="true">→</span>
-          </button>
+          {/* On step 1 the ineligible path has its own buttons. */}
+          {!(step === 0 && hadHeartEvent) && (
+            <button type="button" className="primary-button" onClick={goNext}>
+              {step < STEPS.length - 1
+                ? "Continue"
+                : hadHeartEvent
+                  ? "Continue to research questions"
+                  : "See my heart risk"}
+              <span aria-hidden="true">→</span>
+            </button>
+          )}
         </div>
       </div>
     </form>

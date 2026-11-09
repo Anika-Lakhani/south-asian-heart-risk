@@ -1,9 +1,14 @@
 import { useDeferredValue, useMemo, useState } from "react";
 
 import { QuantileDotplots } from "./components/Dotplot";
+import { DonateCard } from "./components/donate/DonateCard";
+import { DonateStory } from "./components/donate/DonateStory";
+import { DonateSurvey } from "./components/donate/DonateSurvey";
 import { ProfileForm } from "./components/ProfileForm";
 import { RangeBands } from "./components/RangeBands";
 import { WhatIfChart } from "./components/WhatIf";
+import { ancestryOption, defaultAncestryFor, type AncestryKey } from "./lib/ancestry";
+import { donationMode, intakeRecord, type HeartHistory } from "./lib/donation";
 import { BASE_PROFILE, ETHNICITY_LABELS, THRESHOLDS } from "./lib/examples";
 import { fieldName, listJoin, pct, thresholdLabel } from "./lib/format";
 import { riskDomainMax } from "./lib/scale";
@@ -59,6 +64,10 @@ export default function App() {
   const [readings, setReadings] = useState({ bp: 1, lipids: 1 });
   const [hasResults, setHasResults] = useState(false);
   const [formStep, setFormStep] = useState(0);
+  const [heartHistory, setHeartHistory] = useState<HeartHistory | null>(null);
+  const [ancestry, setAncestry] = useState<AncestryKey>(defaultAncestryFor(BASE_PROFILE.ethnicity));
+  const [donate, setDonate] = useState<null | "story" | "survey">(null);
+  const [mode] = useState(() => donationMode());
   const [threshold, setThreshold] = useState(0.075);
   const [view, setView] = useState<View>("dots");
   const [whatIf, setWhatIf] = useState<Partial<Profile>>({});
@@ -98,6 +107,61 @@ export default function App() {
     setProfile(next);
     setWhatIf({});
   };
+
+  const canDonate = mode !== "off";
+  const hadHeartEvent = heartHistory === "yes";
+  const openDonation = () => {
+    setDonate("story");
+    window.scrollTo({ top: 0 });
+  };
+  // People who've had a heart event have no results page, so they go back to the start.
+  const leaveDonation = () => {
+    setDonate(null);
+    if (hadHeartEvent) setFormStep(0);
+    window.scrollTo({ top: 0 });
+  };
+  const risks = results.map((r) => r.risk);
+
+  if (donate) {
+    return (
+      <div className="intake-page donate-page">
+        <header className="intake-header">
+          <span className="brand">
+            <span className="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32">
+                <path d="M16 27S5 20.2 5 11.8C5 7.9 7.7 5 11.4 5c2.1 0 3.8 1 4.6 2.5C16.8 6 18.5 5 20.6 5 24.3 5 27 7.9 27 11.8 27 20.2 16 27 16 27Z" />
+                <path d="M7.5 16h5l2-4 3.2 8 2.2-4H25" />
+              </svg>
+            </span>
+            <span>Heart Risk Check</span>
+          </span>
+          <span className="header-note">Anonymous data donation</span>
+        </header>
+        <main className="donate-main">
+          {donate === "story" ? (
+            <DonateStory
+              spread={hadHeartEvent ? null : { low: Math.min(...risks), high: Math.max(...risks) }}
+              preview={mode === "preview"}
+              onStart={() => {
+                setDonate("survey");
+                window.scrollTo({ top: 0 });
+              }}
+              onCancel={hadHeartEvent ? leaveDonation : () => setDonate(null)}
+              cancelLabel={hadHeartEvent ? "Not now" : "Back to my results"}
+            />
+          ) : (
+            <DonateSurvey
+              mode={mode}
+              heartHistory={heartHistory ?? "no"}
+              intake={intakeRecord(shown, ancestry, heartHistory ?? "no")}
+              onFinish={leaveDonation}
+              finishLabel={hadHeartEvent ? "Back to the start" : "Back to my results"}
+            />
+          )}
+        </main>
+      </div>
+    );
+  }
 
   if (!hasResults) {
     return (
@@ -143,7 +207,16 @@ export default function App() {
               readings={readings}
               onReadingsChange={setReadings}
               initialStep={formStep}
+              heartHistory={heartHistory}
+              onHeartHistoryChange={setHeartHistory}
+              ancestry={ancestry}
+              onAncestryChange={setAncestry}
+              donationMode={mode}
               onComplete={() => {
+                if (heartHistory === "yes") {
+                  if (canDonate) openDonation();
+                  return;
+                }
                 if (!validate(profile)) {
                   setHasResults(true);
                   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -173,18 +246,33 @@ export default function App() {
           <p className="eyebrow">Your heart risk overview</p>
           <h1>How sure is your heart risk?</h1>
         </div>
-        <button
-          type="button"
-          className="edit-answers"
-          onClick={() => {
-            // Come back to Review, where every answer is one "Edit" away.
-            setFormStep(3);
-            setHasResults(false);
-          }}
-        >
-          Edit my answers
-        </button>
+        <div className="results-header-actions">
+          {canDonate && (
+            <button type="button" className="link-button" onClick={openDonation}>
+              Donate data
+            </button>
+          )}
+          <button
+            type="button"
+            className="edit-answers"
+            onClick={() => {
+              // Come back to Review, where every answer is one "Edit" away.
+              setFormStep(3);
+              setHasResults(false);
+            }}
+          >
+            Edit my answers
+          </button>
+        </div>
       </header>
+
+      {heartHistory === "unsure" && (
+        <p className="unsure-note" role="note">
+          You weren’t sure whether you’ve had a heart event. If you have, these numbers don’t apply
+          to you: the calculators are only accurate before a first heart attack, stroke, or similar
+          event. Your doctor can tell you which applies.
+        </p>
+      )}
 
       <div className="result-shell">
         <main>
@@ -455,6 +543,13 @@ export default function App() {
               who may differ from South Asians in the US.
             </p>
           </section>
+
+          {canDonate && (
+            <DonateCard
+              southAsian={ancestryOption(ancestry).southAsian}
+              onDonate={openDonation}
+            />
+          )}
 
           <section className="panel" aria-labelledby="what-if">
             <h2 id="what-if">What if…</h2>

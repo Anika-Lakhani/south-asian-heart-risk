@@ -111,7 +111,10 @@ idea: **guide people in, then teach them how to read the answer.**
 Two smaller decisions mattered for trust. The design originally included a "share my data to
 help others" checkbox, but no database existed. In a health tool, a privacy promise you can't
 keep is worse than none, so I replaced it with a plain statement that nothing leaves the
-browser. I also made sure the whole flow works in dark mode, on phones, and with reduced
+browser. I'm now building the real version: an opt-in donation flow that feeds an open,
+anonymized dataset with real South Asian categories. It asks first whether someone has had a
+heart event (the calculators don't apply if so), anonymizes answers in the browser, and stays
+hidden until the database behind it exists. I also made sure the whole flow works in dark mode, on phones, and with reduced
 motion, and that every chart has a text description and a table equivalent.
 
 <br clear="right">

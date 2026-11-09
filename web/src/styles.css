@@ -2025,3 +2025,677 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------------------------------------------- heart history (step 1) */
+
+.heart-history {
+  margin: 0 0 26px;
+  padding: 0 0 24px;
+  border: 0;
+  border-bottom: 1px solid var(--intake-line);
+}
+
+.heart-history legend {
+  margin-bottom: 4px;
+  color: var(--intake-navy);
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.option-cards.three-up {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.ineligible {
+  padding: 20px 22px;
+  color: var(--in-text-2);
+  background: var(--in-accent-wash);
+  border: 1px solid var(--in-border);
+  border-left: 4px solid var(--intake-blue);
+  border-radius: 12px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.ineligible strong {
+  color: var(--intake-navy);
+}
+
+.ineligible-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.ineligible-why {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--in-border);
+  font-size: 0.86rem;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------- results page */
+
+.results-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.unsure-note {
+  margin: -8px 0 24px;
+  padding: 14px 18px;
+  color: var(--in-text-2);
+  background: var(--in-surface-2);
+  border: 1px solid var(--in-border);
+  border-left: 4px solid var(--warn);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.donate-card {
+  padding: 26px 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px 32px;
+  background: var(--in-guide-bg);
+  border: 1px solid var(--in-border);
+  border-radius: var(--radius);
+}
+
+.donate-card .eyebrow {
+  color: var(--intake-blue-dark);
+}
+
+.donate-card h2 {
+  margin: 4px 0 6px;
+  max-width: 34ch;
+  color: var(--intake-navy);
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+.donate-card p:last-child {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--in-text-2);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 700px) {
+  .donate-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .results-header-actions {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+}
+
+/* ---------------------------------------------------- donation pages */
+
+.donate-main {
+  width: min(880px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 48px 0 80px;
+}
+
+.preview-banner,
+.preview-note {
+  padding: 10px 14px;
+  color: var(--in-text-2);
+  background: var(--in-surface-2);
+  border: 1px dashed var(--in-border);
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+
+.preview-banner {
+  margin: 0 0 28px;
+}
+
+.donate-hero {
+  max-width: 680px;
+  margin-bottom: 44px;
+}
+
+.donate-hero .eyebrow {
+  color: var(--intake-blue-dark);
+}
+
+.donate-hero h1 {
+  margin: 8px 0 14px;
+  color: var(--intake-navy);
+  font-size: clamp(2.1rem, 5.5vw, 3.3rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+
+.donate-hero .lede {
+  color: var(--in-text-2);
+  font-size: 1.12rem;
+}
+
+.donate-section {
+  margin-bottom: 44px;
+}
+
+.donate-section > h2 {
+  margin: 0 0 16px;
+  color: var(--intake-navy);
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.donate-section sup a {
+  margin-left: 1px;
+  color: var(--intake-blue-dark);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  padding: 22px 20px;
+  background: var(--in-surface);
+  border: 1px solid var(--in-hairline);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px var(--in-shadow-sm);
+}
+
+.stat-value {
+  margin: 0 0 8px;
+  color: var(--intake-blue);
+  font-size: clamp(1.9rem, 4vw, 2.4rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.stat-label {
+  margin: 0;
+  color: var(--in-text-2);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* The flattening diagram: many groups funnel into one box. */
+.flatten {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px minmax(160px, 0.42fr);
+  align-items: center;
+  gap: 16px;
+  background: var(--in-surface);
+  border: 1px solid var(--in-hairline);
+  border-radius: 14px;
+}
+
+.flatten-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.group {
+  padding: 6px 11px;
+  color: var(--in-text-2);
+  background: var(--in-surface-2);
+  border: 1px solid var(--in-border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.group.south-asian {
+  color: var(--intake-blue-dark);
+  background: var(--in-accent-wash);
+  border-color: var(--intake-blue);
+  font-weight: 600;
+}
+
+.flatten-arrow {
+  width: 44px;
+  fill: none;
+  stroke: var(--in-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.flatten-box {
+  padding: 22px 16px;
+  display: grid;
+  gap: 4px;
+  text-align: center;
+  background: var(--in-surface-3);
+  border: 2px dashed var(--in-border);
+  border-radius: 12px;
+}
+
+.flatten-box span {
+  color: var(--intake-navy);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.flatten-box small {
+  color: var(--in-muted);
+  font-size: 0.76rem;
+}
+
+.flatten-points {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 28px;
+}
+
+.flatten-points p,
+.missing-row > p {
+  margin: 0;
+  color: var(--in-text-2);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.flatten-points strong,
+.missing-row strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--intake-navy);
+}
+
+.missing-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.missing-row a {
+  color: var(--intake-blue-dark);
+  font-weight: 600;
+}
+
+.stat.big .stat-value {
+  font-size: clamp(2.6rem, 6vw, 3.4rem);
+}
+
+.answer-steps {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+}
+
+.answer-steps li {
+  display: flex;
+  gap: 12px;
+}
+
+.answer-steps li > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--intake-blue-dark);
+  background: var(--in-accent-wash);
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.answer-steps p {
+  margin: 2px 0 0;
+  color: var(--in-text-2);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.answer-steps strong {
+  color: var(--intake-navy);
+}
+
+.protect {
+  padding: 26px;
+  background: var(--in-green-wash);
+  border: 1px solid var(--in-green-line);
+  border-radius: 16px;
+}
+
+.protect > h2 {
+  color: var(--in-green-ink);
+}
+
+.protect-grid {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 26px;
+  list-style: none;
+}
+
+.protect-grid li {
+  display: flex;
+  gap: 12px;
+}
+
+.protect-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--intake-green);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.protect-grid strong {
+  color: var(--intake-navy);
+  font-size: 0.92rem;
+}
+
+.protect-grid p {
+  margin: 3px 0 0;
+  color: var(--in-text-2);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.donate-consent {
+  padding: 24px 26px;
+  background: var(--in-surface);
+  border: 1px solid var(--in-hairline);
+  border-radius: 16px;
+  box-shadow:
+    0 22px 60px var(--in-shadow-lg),
+    0 2px 8px var(--in-shadow-sm);
+}
+
+.consent-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--intake-navy);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.consent-check input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  flex: none;
+  accent-color: var(--intake-blue);
+}
+
+.donate-actions {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.donate-sources {
+  margin-top: 44px;
+  color: var(--in-muted);
+  font-size: 0.78rem;
+}
+
+.donate-sources h2 {
+  margin: 0 0 8px;
+  color: var(--in-text-2);
+  font-size: 0.85rem;
+}
+
+.donate-sources ol {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.donate-sources a {
+  color: var(--intake-blue-dark);
+}
+
+.donate-sources li:target {
+  color: var(--intake-navy);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------- survey */
+
+.survey-card {
+  scroll-margin-top: 24px;
+  background: var(--in-surface);
+  border: 1px solid var(--in-hairline);
+  border-radius: 20px;
+  box-shadow:
+    0 22px 60px var(--in-shadow-lg),
+    0 2px 8px var(--in-shadow-sm);
+}
+
+.survey-step {
+  padding: 34px 38px;
+}
+
+.survey-step h2 {
+  margin: 4px 0 8px;
+  color: var(--intake-navy);
+  font-size: 1.65rem;
+  letter-spacing: -0.025em;
+}
+
+.survey-step .step-intro {
+  margin-bottom: 24px;
+}
+
+.survey-field {
+  margin: 0 0 22px;
+  padding: 0;
+  display: block;
+  border: 0;
+}
+
+.survey-field legend,
+.survey-field .field-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--intake-navy);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.survey-field .field-hint {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.survey-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.survey-options button {
+  min-height: 42px;
+  padding: 8px 14px;
+  color: var(--intake-navy);
+  background: var(--in-surface);
+  border: 1px solid var(--in-border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.survey-options button[aria-pressed="true"],
+.survey-options button[aria-checked="true"] {
+  color: var(--intake-blue-dark);
+  background: var(--intake-sky);
+  border: 2px solid var(--intake-blue);
+  padding: 7px 13px;
+  font-weight: 700;
+}
+
+.survey-number-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.survey-number input {
+  width: 140px;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: var(--intake-navy);
+  background: var(--in-surface);
+  border: 1px solid var(--in-border);
+  border-radius: 10px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.survey-number input:focus {
+  border-color: var(--intake-blue);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(34, 102, 211, 0.12);
+}
+
+.survey-number .unit {
+  position: static;
+  transform: none;
+  color: var(--in-muted);
+  font-size: 0.82rem;
+}
+
+.survey-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+
+.survey-grid .survey-field {
+  margin-bottom: 14px;
+}
+
+.survey-grid .field-label {
+  font-weight: 600;
+  color: var(--in-text-2);
+}
+
+.unit-toggle {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--in-surface-3);
+  border-radius: 8px;
+}
+
+.unit-toggle button {
+  padding: 5px 10px;
+  color: var(--in-muted);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.unit-toggle button[aria-pressed="true"] {
+  color: var(--intake-blue-dark);
+  background: var(--in-surface);
+  box-shadow: 0 1px 3px var(--in-shadow-sm);
+}
+
+.survey-offer,
+.survey-done {
+  text-align: center;
+}
+
+.survey-offer .step-intro,
+.survey-done .step-intro {
+  max-width: 52ch;
+  margin-inline: auto;
+}
+
+.survey-offer .donate-actions,
+.survey-done .donate-actions {
+  justify-content: center;
+}
+
+.done-mark {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: var(--intake-green);
+  border-radius: 50%;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.preview-note {
+  max-width: 52ch;
+  margin: 0 auto 4px;
+}
+
+@media (max-width: 760px) {
+  .stat-grid,
+  .answer-steps,
+  .protect-grid,
+  .flatten-points,
+  .missing-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .flatten {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .flatten-arrow {
+    margin: 0 auto;
+    transform: rotate(90deg);
+  }
+  .survey-step {
+    padding: 26px 20px;
+  }
+  .donate-main {
+    width: min(100% - 32px, 880px);
+    padding-top: 28px;
+  }
+  .option-cards.three-up {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .survey-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

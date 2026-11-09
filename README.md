@@ -50,6 +50,8 @@ The [app](https://anika-lakhani.github.io/south-asian-heart-risk/) has two parts
 
 **A four-step intake** (about you, your numbers, health history, review) asks plain-language questions, with hints for where to find each number. It also has steppers you can drag to adjust, a BMI calculator for people who don't know theirs, and example profiles for anyone without their own numbers. Everything is calculated in the browser and nothing is saved.
 
+**Step 1 opens by asking about heart history.** The calculators are only valid before a first heart attack or stroke, so anyone who's had one is told why they won't get a score, and invited to donate their data instead.
+
 **A results page** starts with how to read it ("three answers, not one verdict"), then shows each calculator's estimate, a likely range, and a natural-frequency translation ("about 7–8 in 100 people with the same inputs"). It separates the two kinds of uncertainty, **model** (the calculators disagree) and **measurement** (any one reading is noisy), and shows the measurement spread in your choice of three formats from the original study design:
 
 - **Dots**: a quantile dotplot. Each of 20 dots is one equally likely re-measurement, and the dots past the treatment threshold are highlighted, so "10 of 20" is something you can count. On load the dots drop in one at a time, a nod to the dice paper's Plinko display.
@@ -59,6 +61,8 @@ The [app](https://anika-lakhani.github.io/south-asian-heart-risk/) has two parts
 <img src="docs/screenshots/phone.png" alt="The quantile dotplots on a phone: QRISK3 shows 10 of 20 dots at or past the dashed 7.5% line, while the other two models sit well below it." width="260" align="right">
 
 It also shows the same person scored as white (only QRISK3 changes), and what-if sliders that update every model live as you drag. The headline sentence is generated from your results, so it says what matters for *you* ("the calculators disagree about which side of the line you're on"). Everything follows the system light/dark theme, using blue palettes that pass colorblind-safety and contrast checks in both modes. Every chart has an accessible text description and a table twin, and animation respects reduced-motion settings.
+
+**Anonymous data donation (in preview).** After their results, people can donate their answers to an open dataset with real South Asian categories, plus a few questions US surveys don't ask: age at first heart event, years since immigrating, and optional South Asian-specific risks like waist size, chewing tobacco, and Lp(a). Answers are anonymized in the browser (ages become 5-year bands; no name, email, or location), each section is saved on its own, and consent is an unchecked box. Until the database is connected the flow is hidden; open the app with `?donate=preview` to try it, and nothing is sent.
 
 Add `?theme=dark` or `?theme=light` to the URL to override the system setting.
 
@@ -138,7 +142,7 @@ Measurement variability defaults are approximate literature values (SBP within-p
 
 ```bash
 pytest                    # Python: 87 tests
-cd web && npm test        # TypeScript: 362 tests, including the intake flow
+cd web && npm test        # TypeScript: 371 tests, including every intake and donation path
 ```
 
 ## What US survey data says (ML analysis)
