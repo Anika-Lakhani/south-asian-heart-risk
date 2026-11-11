@@ -7,6 +7,7 @@ import { DonateSurvey } from "./components/donate/DonateSurvey";
 import { PrivacyPage } from "./components/PrivacyPage";
 import { ProfileForm } from "./components/ProfileForm";
 import { RangeBands } from "./components/RangeBands";
+import { Reveal } from "./components/Reveal";
 import { WhatIfChart } from "./components/WhatIf";
 import { ancestryOption, defaultAncestryFor, type AncestryKey } from "./lib/ancestry";
 import { contributorCount, donationMode, intakeRecord, type HeartHistory } from "./lib/donation";
@@ -15,7 +16,7 @@ import { fieldName, listJoin, pct, thresholdLabel } from "./lib/format";
 import { riskDomainMax } from "./lib/scale";
 import { isCurrentSmoker, validate, type Profile } from "./models/profile";
 import { QRISK3_DISCLAIMER } from "./models/qrisk3";
-import { score, type ModelResult } from "./models/scoring";
+import { score, type Model, type ModelResult } from "./models/scoring";
 import { simulate, summarize, type Summary } from "./models/uncertainty";
 
 const N_DOTS = 20;
@@ -30,6 +31,22 @@ function naturalFrequency(risk: number) {
   const low = Math.floor(exact);
   const high = Math.ceil(exact);
   return low === high ? `about ${low} in 100` : `about ${low}–${high} in 100`;
+}
+
+/** The plain-language "how is this calculated?" panel on each result card. */
+function ModelExplainer({ model }: { model: Model }) {
+  return (
+    <>
+      <p className="explainer-title">How {model.shortName} works</p>
+      <p>{model.howItWorks}</p>
+      <p className="explainer-title">What it assumes</p>
+      <ul>
+        {model.assumptions.map((a) => (
+          <li key={a}>{a}</li>
+        ))}
+      </ul>
+    </>
+  );
 }
 
 function headline(results: ModelResult[], summaries: Record<string, Summary>, threshold: number) {
@@ -351,11 +368,22 @@ export default function App() {
             <p className="headline" aria-live="polite">
               {spread} <span>{side}</span>
             </p>
+            <p className="cards-hint">
+              Point at a calculator, or tap its <span className="hint-icon">i</span>, to see how
+              it works and what it assumes.
+            </p>
             <div className="cards">
               {results.map((r) => {
                 const [low, high] = summaries[r.model.key]!.interval(0.9);
                 return (
-                  <article key={r.model.key} className="card">
+                  <Reveal
+                    as="article"
+                    key={r.model.key}
+                    className="card"
+                    placement="over"
+                    label={`How ${r.model.shortName} works`}
+                    more={<ModelExplainer model={r.model} />}
+                  >
                     <h3>{r.model.name}</h3>
                     <p className="metric-label">10-year estimate</p>
                     <p className="big">{pct(r.risk)}</p>
@@ -375,7 +403,7 @@ export default function App() {
                         on. Treat it as a rough extrapolation.
                       </p>
                     )}
-                  </article>
+                  </Reveal>
                 );
               })}
             </div>

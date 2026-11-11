@@ -22,6 +22,10 @@ export interface Model {
   /** Plain-language version of the outcome, for sentences. */
   outcomePlain: string;
   origin: string;
+  /** Plain-language explanation of how the number is built, for the card's explainer. */
+  howItWorks: string;
+  /** What the model takes for granted, in plain language. */
+  assumptions: readonly string[];
   validRanges: Record<string, readonly [number, number]>;
   fn: (p: Profile, m: Measurements) => number;
 }
@@ -37,6 +41,13 @@ export const MODELS: readonly Model[] = [
     outcome: "hard ASCVD",
     outcomePlain: "a heart attack, a stroke, or death from heart disease",
     origin: "US, 2013. Scores South Asians as white.",
+    howItWorks:
+      "Researchers followed about 25,000 American adults for years, in studies that began between 1968 and 1990, and recorded who had a heart attack or stroke. The calculator weighs your age, cholesterol, blood pressure, diabetes, and smoking by how strongly each predicted those events, adds them up, and turns the total into a 10-year chance.",
+    assumptions: [
+      "Everyone is either white or African American. There are only those two versions, so South Asians are scored as white.",
+      "People today resemble the people in those older studies. It often overestimates risk in modern groups.",
+      "It counts heart attacks, strokes, and heart-disease deaths, but not mini-strokes.",
+    ],
     validRanges: PCE_VALID_RANGES,
     fn: (p, m) =>
       pce10yrAscvd({
@@ -56,6 +67,13 @@ export const MODELS: readonly Model[] = [
     outcome: "ASCVD",
     outcomePlain: "a heart attack or stroke",
     origin: "US, 2023. Doesn't use race at all.",
+    howItWorks:
+      "Built in 2023 from the health records of more than 6 million American adults. It weighs the same basics as the older calculator (age, cholesterol, blood pressure, diabetes, smoking) and adds kidney function and whether you take a statin or blood pressure medicine, then turns the total into a 10-year chance.",
+    assumptions: [
+      "Race isn't needed: your measured numbers capture the risk that race used to stand in for. That also means it can't see South Asian–specific risk.",
+      "Your kidney function is normal unless you entered a value.",
+      "It counts heart attacks and strokes, the same events as the older US calculator.",
+    ],
     validRanges: PREVENT_VALID_RANGES,
     fn: (p, m) =>
       prevent10yr({
@@ -77,6 +95,13 @@ export const MODELS: readonly Model[] = [
     outcome: "CVD (CHD, stroke, TIA)",
     outcomePlain: "a heart attack, a stroke, or a mini-stroke (TIA)",
     origin: "UK, 2017. Separate terms for Indian, Pakistani, Bangladeshi.",
+    howItWorks:
+      "Built from the records of about 8 million patients at UK family doctors' practices. It starts from the typical risk for your age and sex, then raises or lowers it for your ancestry (with separate adjustments for Indian, Pakistani, and Bangladeshi people), cholesterol, blood pressure, weight, smoking, family history, and a long list of conditions such as diabetes, kidney disease, and migraine.",
+    assumptions: [
+      "Your care and surroundings are like the UK's. It also adjusts for how deprived your neighborhood is, which we can't know, so it uses an average.",
+      "Your blood pressure varies from visit to visit as much as a typical patient's, since this tool doesn't ask.",
+      "It counts mini-strokes (TIAs) as well as heart attacks and strokes, so its number tends to run higher.",
+    ],
     validRanges: QRISK3_VALID_RANGES,
     fn: (p, m) =>
       qrisk3_10yr({
