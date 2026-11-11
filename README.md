@@ -9,7 +9,7 @@
 <a href="https://anika-lakhani.github.io/south-asian-heart-risk/">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/results-dark.png">
-    <img src="docs/screenshots/results-light.png" alt="Results for a 48-year-old Pakistani man: a guide to reading the results, then three calculators giving 4.0%, 2.4%, and 7.5%, each with a likely range and a natural-frequency explanation.">
+    <img src="docs/screenshots/results-light.png" alt="Results for a 48-year-old Pakistani man: a guide to reading the results, then three calculators giving 4.0%, 2.4%, and 7.5%, each with a likely range, a natural-frequency explanation, and an ⓘ button that explains how the calculator works.">
   </picture>
 </a>
 
