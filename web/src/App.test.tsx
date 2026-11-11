@@ -52,7 +52,10 @@ describe("App", () => {
     // The default profile is a South Asian man, so the survey's limitation is stated.
     expect(document.body.textContent).toContain("Asian American men aged");
     expect(document.body.textContent).toContain("can't be narrowed to South Asians");
-    expect(screen.getAllByText("People like you")).toHaveLength(3);
+    // Peers are drawn on each calculator's own chart, not as extra rows.
+    expect(document.querySelectorAll(".dot-row")).toHaveLength(3);
+    expect(document.querySelectorAll(".dot-row.with-peers")).toHaveLength(3);
+    expect(document.body.textContent).toMatch(/Higher than \d+ of 20 people like you/);
   });
 
   it("walks through the four steps to the results", () => {

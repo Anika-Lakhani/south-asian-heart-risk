@@ -20,6 +20,7 @@
   --dot-loud: #104281;
   --peer-quiet: #c4c9d1;
   --peer-loud: #596170;
+  --peer-track: #e7e9ed;
   --warn: #8a5a00;
   --radius: 14px;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -43,6 +44,7 @@
     --dot-loud: #9ec5f4;
     --peer-quiet: #4b525d;
     --peer-loud: #b8bfca;
+    --peer-track: #2b2f36;
     --warn: #eda100;
   }
 }
@@ -65,6 +67,7 @@
   --dot-loud: #9ec5f4;
   --peer-quiet: #4b525d;
   --peer-loud: #b8bfca;
+  --peer-track: #2b2f36;
   --warn: #eda100;
 }
 
@@ -3117,13 +3120,14 @@ input[type="range"] {
   margin: 0 !important;
 }
 
-.peer-row {
-  margin-top: -6px;
+.peer-caption {
+  display: block;
+  color: var(--ink-2);
 }
 
-.peer-row figcaption strong {
-  color: var(--ink-2);
-  font-weight: 500;
+.peer-baseline {
+  stroke: var(--axis);
+  stroke-width: 1;
 }
 
 .dot-quiet.dot-peer {
@@ -3134,23 +3138,19 @@ input[type="range"] {
   fill: var(--peer-loud);
 }
 
-.band-peer-outer,
+.band-peer-outer {
+  fill: var(--peer-track);
+}
+
 .swatch.band-peer-inner {
+  background: var(--peer-quiet);
+}
+
+.band-peer-inner {
   fill: var(--peer-quiet);
   background: var(--peer-quiet);
 }
 
 .band-peer-inner {
-  fill: var(--peer-loud);
-}
-
-.you-marker line {
-  stroke: var(--ink);
-  stroke-width: 2;
-}
-
-.you-marker text {
-  fill: var(--ink);
-  font-size: 10px;
-  font-weight: 700;
+  fill: var(--peer-quiet);
 }

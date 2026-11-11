@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 
 import { pct, thresholdLabel } from "../lib/format";
 import { useWidth } from "../lib/useWidth";
-import { YouMarker } from "./Dotplot";
 import { RiskAxis, ThresholdLine } from "./RiskAxis";
 
 export interface RangeRow {
@@ -11,13 +10,13 @@ export interface RangeRow {
   risk: number;
   outer: [number, number];
   inner: [number, number];
-  /** A comparison row of other people: bands cover people, and `risk` marks you. */
-  peer?: { caption: ReactNode; label: string };
+  /** People like you, drawn as a wider grey track behind your own bands. */
+  peer?: { outer: [number, number]; inner: [number, number]; caption: ReactNode; label: string };
 }
 
 const HEIGHT = 30;
-const PEER_HEIGHT = 40;
 const BAND = 10;
+const PEER_BAND = 22;
 
 /** Interval bands: 90% of re-measurements (outer) and the middle 50% (inner). */
 export function RangeBands({
@@ -31,57 +30,47 @@ export function RangeBands({
 }) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const x = (risk: number) => (Math.min(risk, xMax) / xMax) * width;
+  const band = (range: [number, number], className: string, size: number) => (
+    <rect
+      className={className}
+      x={x(range[0])}
+      y={(HEIGHT - size) / 2}
+      width={Math.max(size, x(range[1]) - x(range[0]))}
+      height={size}
+      rx={size / 2}
+    />
+  );
 
   return (
     <div className="ranges" ref={ref}>
       {rows.map((row) => {
-        const height = row.peer ? PEER_HEIGHT : HEIGHT;
-        const band = (range: [number, number], className: string) => (
-          <rect
-            className={className}
-            x={x(range[0])}
-            y={height - (HEIGHT + BAND) / 2}
-            width={Math.max(BAND, x(range[1]) - x(range[0]))}
-            height={BAND}
-            rx={BAND / 2}
-          />
-        );
+        const ownLabel = `${row.name}: estimate ${pct(row.risk)}; 90% of re-measurements between ${pct(row.outer[0])} and ${pct(row.outer[1])}; threshold ${thresholdLabel(threshold)}.`;
         return (
-          <figure key={row.key} className={`range-row ${row.peer ? "peer-row" : ""}`}>
+          <figure key={row.key} className={`range-row ${row.peer ? "with-peers" : ""}`}>
             <figcaption>
               <strong>{row.name}</strong>
               <span>
-                {row.peer ? (
-                  row.peer.caption
-                ) : (
-                  <>
-                    90% of re-measurements fall between <b>{pct(row.outer[0])}</b> and{" "}
-                    <b>{pct(row.outer[1])}</b>
-                  </>
-                )}
+                90% of re-measurements fall between <b>{pct(row.outer[0])}</b> and{" "}
+                <b>{pct(row.outer[1])}</b>
+                {row.peer && <span className="peer-caption">{row.peer.caption}</span>}
               </span>
             </figcaption>
             <svg
               width={width}
-              height={height}
+              height={HEIGHT}
               role="img"
-              aria-label={
-                row.peer?.label ??
-                `${row.name}: estimate ${pct(row.risk)}; 90% of re-measurements between ${pct(row.outer[0])} and ${pct(row.outer[1])}; threshold ${thresholdLabel(threshold)}.`
-              }
+              aria-label={row.peer ? `${ownLabel} ${row.peer.label}` : ownLabel}
             >
-              <ThresholdLine x={x(threshold)} height={height} />
-              {band(row.outer, row.peer ? "band-outer band-peer-outer" : "band-outer")}
-              {band(row.inner, row.peer ? "band-inner band-peer-inner" : "band-inner")}
-              {row.peer ? (
-                <YouMarker x={x(row.risk)} height={height} />
-              ) : (
-                <g className="dot" style={{ transform: `translate(${x(row.risk)}px, ${height / 2}px)` }}>
-                  <circle r={6} className="estimate">
-                    <title>{`Estimate from your entered values: ${pct(row.risk)}`}</title>
-                  </circle>
-                </g>
-              )}
+              <ThresholdLine x={x(threshold)} height={HEIGHT} />
+              {row.peer && band(row.peer.outer, "band-peer-outer", PEER_BAND)}
+              {row.peer && band(row.peer.inner, "band-peer-inner", PEER_BAND)}
+              {band(row.outer, "band-outer", BAND)}
+              {band(row.inner, "band-inner", BAND)}
+              <g className="dot" style={{ transform: `translate(${x(row.risk)}px, ${HEIGHT / 2}px)` }}>
+                <circle r={6} className="estimate">
+                  <title>{`Estimate from your entered values: ${pct(row.risk)}`}</title>
+                </circle>
+              </g>
             </svg>
           </figure>
         );
@@ -99,7 +88,7 @@ export function RangeBands({
         </li>
         {rows.some((r) => r.peer) && (
           <li>
-            <span className="swatch band-peer-inner" /> People like you (middle 50% / 90%)
+            <span className="swatch band-peer-inner" /> People like you (grey track: middle 50% / 90%)
           </li>
         )}
         <li>

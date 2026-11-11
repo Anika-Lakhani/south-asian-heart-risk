@@ -600,32 +600,23 @@ export default function App() {
             {view === "dots" && (
               <>
                 <QuantileDotplots
-                  rows={results.flatMap((r) => {
-                    const own = {
+                  rows={results.map((r) => {
+                    const p = peers?.[r.model.key];
+                    const lower = p ? Math.round(p.shareBelow(r.risk) * N_DOTS) : 0;
+                    return {
                       key: r.model.key,
                       name: r.model.name,
                       dots: summaries[r.model.key]!.quantileDots(N_DOTS),
-                    };
-                    const p = peers?.[r.model.key];
-                    if (!p) return [own];
-                    const lower = Math.round(p.shareBelow(r.risk) * N_DOTS);
-                    return [
-                      own,
-                      {
-                        key: `${r.model.key}-peers`,
-                        name: "People like you",
+                      peer: p && {
                         dots: p.quantileDots(N_DOTS),
-                        peer: {
-                          you: r.risk,
-                          caption: (
-                            <>
-                              You're higher than <b>{lower}</b> of {N_DOTS}
-                            </>
-                          ),
-                          label: `People like you, scored by ${r.model.name}: your ${pct(r.risk)} is higher than ${lower} of ${N_DOTS}. They range from ${pct(p.quantile(0.025))} to ${pct(p.quantile(0.975))}.`,
-                        },
+                        caption: (
+                          <>
+                            Higher than <b>{lower}</b> of {N_DOTS} people like you
+                          </>
+                        ),
+                        label: `Below the line, 20 grey dots stand for people like you, scored by ${r.model.name}: your ${pct(r.risk)} is higher than ${lower} of ${N_DOTS}. They range from ${pct(p.quantile(0.025))} to ${pct(p.quantile(0.975))}.`,
                       },
-                    ];
+                    };
                   })}
                   threshold={threshold}
                   xMax={xMax}
@@ -636,7 +627,7 @@ export default function App() {
                   {peers && (
                     <>
                       {" "}
-                      Each grey dot is a person: 1 in {N_DOTS} people like you.
+                      Grey dots below each line are people: each is 1 in {N_DOTS} people like you.
                     </>
                   )}
                 </p>
@@ -644,36 +635,27 @@ export default function App() {
             )}
             {view === "ranges" && (
               <RangeBands
-                rows={results.flatMap((r) => {
+                rows={results.map((r) => {
                   const s = summaries[r.model.key]!;
-                  const own = {
+                  const p = peers?.[r.model.key];
+                  const [low, high] = p ? p.interval(0.5) : [0, 0];
+                  return {
                     key: r.model.key,
                     name: r.model.name,
                     risk: r.risk,
                     outer: s.interval(0.9),
                     inner: s.interval(0.5),
-                  };
-                  const p = peers?.[r.model.key];
-                  if (!p) return [own];
-                  const [low, high] = p.interval(0.5);
-                  return [
-                    own,
-                    {
-                      key: `${r.model.key}-peers`,
-                      name: "People like you",
-                      risk: r.risk,
+                    peer: p && {
                       outer: p.interval(0.9),
                       inner: p.interval(0.5),
-                      peer: {
-                        caption: (
-                          <>
-                            The middle half fall between <b>{pct(low)}</b> and <b>{pct(high)}</b>
-                          </>
-                        ),
-                        label: `People like you, scored by ${r.model.name}: the middle half fall between ${pct(low)} and ${pct(high)}; 90% between ${pct(p.interval(0.9)[0])} and ${pct(p.interval(0.9)[1])}. Yours is ${pct(r.risk)}.`,
-                      },
+                      caption: (
+                        <>
+                          Middle half of people like you: <b>{pct(low)}</b>–<b>{pct(high)}</b>
+                        </>
+                      ),
+                      label: `The grey track behind shows people like you, scored by ${r.model.name}: the middle half fall between ${pct(low)} and ${pct(high)}; 90% between ${pct(p.interval(0.9)[0])} and ${pct(p.interval(0.9)[1])}.`,
                     },
-                  ];
+                  };
                 })}
                 threshold={threshold}
                 xMax={xMax}
