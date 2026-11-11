@@ -18,6 +18,8 @@
   --accent-wash: #e8f1fc;
   --dot-quiet: #86b6ef;
   --dot-loud: #104281;
+  --peer-quiet: #c4c9d1;
+  --peer-loud: #596170;
   --warn: #8a5a00;
   --radius: 14px;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -39,6 +41,8 @@
     --accent-wash: #16263a;
     --dot-quiet: #256abf;
     --dot-loud: #9ec5f4;
+    --peer-quiet: #4b525d;
+    --peer-loud: #b8bfca;
     --warn: #eda100;
   }
 }
@@ -59,6 +63,8 @@
   --accent-wash: #16263a;
   --dot-quiet: #256abf;
   --dot-loud: #9ec5f4;
+  --peer-quiet: #4b525d;
+  --peer-loud: #b8bfca;
   --warn: #eda100;
 }
 
@@ -3036,4 +3042,115 @@ input[type="range"] {
 .protect-grid .reveal-toggle {
   top: 50%;
   transform: translateY(-50%);
+}
+
+/* ------------------------------------------------- people like you */
+
+.compare {
+  margin: -4px 0 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--page);
+}
+
+.compare-toggle {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.compare-toggle input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--accent-ink);
+  flex: none;
+}
+
+.compare-toggle span {
+  display: grid;
+  gap: 2px;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+}
+
+.compare-toggle strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.compare-note {
+  margin: 12px 0 0 30px;
+  color: var(--ink-2);
+  font-size: 0.88rem;
+}
+
+.compare-note p {
+  margin: 0 0 6px;
+}
+
+.compare-caveat {
+  padding-left: 10px;
+  border-left: 3px solid var(--peer-quiet);
+}
+
+.compare-how {
+  display: inline-block;
+  padding-right: 32px;
+}
+
+.compare-how .reveal-toggle {
+  top: -2px;
+  right: 0;
+}
+
+.compare-how > .reveal-more {
+  width: min(520px, 80vw);
+  right: auto;
+}
+
+.compare-how-label {
+  color: var(--accent-ink);
+  font-weight: 600;
+  margin: 0 !important;
+}
+
+.peer-row {
+  margin-top: -6px;
+}
+
+.peer-row figcaption strong {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.dot-quiet.dot-peer {
+  fill: var(--peer-quiet);
+}
+
+.dot-loud.dot-peer {
+  fill: var(--peer-loud);
+}
+
+.band-peer-outer,
+.swatch.band-peer-inner {
+  fill: var(--peer-quiet);
+  background: var(--peer-quiet);
+}
+
+.band-peer-inner {
+  fill: var(--peer-loud);
+}
+
+.you-marker line {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.you-marker text {
+  fill: var(--ink);
+  font-size: 10px;
+  font-weight: 700;
 }

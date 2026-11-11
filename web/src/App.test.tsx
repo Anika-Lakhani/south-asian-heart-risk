@@ -33,6 +33,28 @@ describe("App", () => {
     expect(screen.getByText("Step 1 of 4")).toBeTruthy();
   });
 
+  it("compares you with people like you, and explains each calculator", async () => {
+    render(<App />);
+    answer("No");
+    next();
+    next();
+    next();
+    fireEvent.click(screen.getByRole("button", { name: /see my heart risk/i }));
+
+    // Each calculator card explains itself, including by keyboard or tap.
+    const how = screen.getByRole("button", { name: "How PCE works" });
+    fireEvent.click(how);
+    expect(how.getAttribute("aria-expanded")).toBe("true");
+    expect(document.body.textContent).toContain("South Asians are scored as white");
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /compare with people like you/i }));
+    expect(await screen.findByText(/Comparing you with/)).toBeTruthy();
+    // The default profile is a South Asian man, so the survey's limitation is stated.
+    expect(document.body.textContent).toContain("Asian American men aged");
+    expect(document.body.textContent).toContain("can't be narrowed to South Asians");
+    expect(screen.getAllByText("People like you")).toHaveLength(3);
+  });
+
   it("walks through the four steps to the results", () => {
     render(<App />);
     answer("No");

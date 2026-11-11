@@ -95,6 +95,18 @@ because it's the dataset's reason for existing. The script also:
   linked across releases or ordered by arrival;
 - **refuses to publish fewer than 30 rows.**
 
+## How donations come back to donors
+
+Released data also powers the app's **"Compare with people like you"** option. Until there
+are enough donors, South Asians are compared with Asian Americans from NHANES, because US
+surveys don't separate them. After each release,
+[`scripts/build_peers.py`](../scripts/build_peers.py) adds the released donors who haven't had
+a heart event to the comparison data. Once at least 30 donors match someone's sex, age
+(within 10 years), and ancestry, the app compares them with those donors instead. If there
+aren't 30 of their exact ancestry, it uses all South Asian donors.
+The builder reads only the public, k-anonymous release CSV, never the database, so it adds no
+new privacy exposure.
+
 ## Storage and access
 
 ```mermaid

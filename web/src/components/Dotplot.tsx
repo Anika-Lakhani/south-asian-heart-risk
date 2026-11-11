@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { pct, thresholdLabel } from "../lib/format";
 import { useWidth } from "../lib/useWidth";
@@ -9,6 +9,14 @@ export interface DotRow {
   name: string;
   /** Quantile dots, sorted ascending. */
   dots: number[];
+  /** A comparison row of other people, rather than your own re-measurements. */
+  peer?: {
+    /** Your own estimate, marked on the row. */
+    you: number;
+    caption: ReactNode;
+    /** Screen-reader summary. */
+    label: string;
+  };
 }
 
 interface Props {
@@ -31,6 +39,7 @@ export function QuantileDotplots({ rows, threshold, xMax }: Props) {
   // About 24 bins on a phone, capped at 14px dots on wide screens.
   const diameter = Math.max(9, Math.min(14, width / 24));
   const nBins = Math.max(1, Math.floor(width / diameter));
+  const step = diameter + GAP / 2;
   const binWidth = width / nBins;
   const x = (risk: number) => (risk / xMax) * width;
 
@@ -42,33 +51,44 @@ export function QuantileDotplots({ rows, threshold, xMax }: Props) {
       counts.set(bin, stack + 1);
       return { risk, index, cx: (bin + 0.5) * binWidth, stack };
     });
-    return { ...row, dots };
+    // Each row is as tall as its own tallest stack, plus room for the "You" label.
+    const stacks = Math.max(1, ...dots.map((d) => d.stack + 1));
+    const height = stacks * step + GAP * 2 + (row.peer ? 14 : 0);
+    return { ...row, dots, height };
   });
-  const maxStack = Math.max(1, ...placed.flatMap((r) => r.dots.map((d) => d.stack + 1)));
-  const step = diameter + GAP / 2;
-  const height = maxStack * step + GAP * 2;
   const radius = diameter / 2 - GAP / 2;
 
   return (
     <div className="dotplots" ref={ref}>
       {placed.map((row) => {
+        const { height } = row;
         const above = row.dots.filter((d) => d.risk >= threshold).length;
         return (
-          <figure key={row.key} className="dot-row">
+          <figure key={row.key} className={`dot-row ${row.peer ? "peer-row" : ""}`}>
             <figcaption>
               <strong>{row.name}</strong>
               <span>
-                <b>{above}</b> of {row.dots.length} re-measurements at or above{" "}
-                {thresholdLabel(threshold)}
+                {row.peer ? (
+                  row.peer.caption
+                ) : (
+                  <>
+                    <b>{above}</b> of {row.dots.length} re-measurements at or above{" "}
+                    {thresholdLabel(threshold)}
+                  </>
+                )}
               </span>
             </figcaption>
             <svg
               width={width}
               height={height}
               role="img"
-              aria-label={`${row.name}: ${above} of ${row.dots.length} equally likely re-measurements are at or above ${thresholdLabel(threshold)}. They range from ${pct(row.dots[0]?.risk ?? 0)} to ${pct(row.dots.at(-1)?.risk ?? 0)}.`}
+              aria-label={
+                row.peer?.label ??
+                `${row.name}: ${above} of ${row.dots.length} equally likely re-measurements are at or above ${thresholdLabel(threshold)}. They range from ${pct(row.dots[0]?.risk ?? 0)} to ${pct(row.dots.at(-1)?.risk ?? 0)}.`
+              }
             >
               <ThresholdLine x={x(threshold)} height={height} />
+              {row.peer && <YouMarker x={x(Math.min(row.peer.you, xMax))} height={height} />}
               {row.dots.map((d) => {
                 const loud = d.risk >= threshold;
                 const isHovered = hover?.row === row.key && hover.index === d.index;
@@ -85,11 +105,11 @@ export function QuantileDotplots({ rows, threshold, xMax }: Props) {
                     {/* The inner circle carries the one-time drop-in animation. */}
                     <circle
                       r={radius}
-                      className={loud ? "dot-loud" : "dot-quiet"}
+                      className={`${loud ? "dot-loud" : "dot-quiet"} ${row.peer ? "dot-peer" : ""}`}
                       style={{ animationDelay: `${d.index * 35}ms` }}
                       strokeWidth={isHovered ? 2.5 : GAP}
                     >
-                      <title>{`One re-measurement: ${pct(d.risk)}`}</title>
+                      <title>{`${row.peer ? "One in 20 people like you" : "One re-measurement"}: ${pct(d.risk)}`}</title>
                     </circle>
                     {/* Larger invisible hit target than the mark itself. */}
                     <circle r={Math.max(radius + 3, 10)} className="hit" />
@@ -105,7 +125,8 @@ export function QuantileDotplots({ rows, threshold, xMax }: Props) {
                 }}
                 role="status"
               >
-                One re-measurement: <b>{pct(row.dots[hover.index]?.risk ?? 0)}</b>
+                {row.peer ? "One in 20 people like you" : "One re-measurement"}:{" "}
+                <b>{pct(row.dots[hover.index]?.risk ?? 0)}</b>
               </div>
             )}
           </figure>
@@ -113,5 +134,17 @@ export function QuantileDotplots({ rows, threshold, xMax }: Props) {
       })}
       <RiskAxis width={width} xMax={xMax} />
     </div>
+  );
+}
+
+/** Where your own estimate sits on a row of other people. */
+export function YouMarker({ x, height }: { x: number; height: number }) {
+  return (
+    <g className="you-marker" aria-hidden="true">
+      <line x1={x} x2={x} y1={10} y2={height} />
+      <text x={x} y={8} textAnchor="middle">
+        You
+      </text>
+    </g>
   );
 }

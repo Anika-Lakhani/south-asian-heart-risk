@@ -13,6 +13,14 @@ import { ancestryOption, defaultAncestryFor, type AncestryKey } from "./lib/ance
 import { contributorCount, donationMode, intakeRecord, type HeartHistory } from "./lib/donation";
 import { BASE_PROFILE, ETHNICITY_LABELS, THRESHOLDS } from "./lib/examples";
 import { fieldName, listJoin, pct, thresholdLabel } from "./lib/format";
+import {
+  findPeers,
+  loadPeers,
+  scorePeers,
+  type PeerData,
+  type PeerGroup,
+  type PeerSummary,
+} from "./lib/peers";
 import { riskDomainMax } from "./lib/scale";
 import { isCurrentSmoker, validate, type Profile } from "./models/profile";
 import { QRISK3_DISCLAIMER } from "./models/qrisk3";
@@ -31,6 +39,87 @@ function naturalFrequency(risk: number) {
   const low = Math.floor(exact);
   const high = Math.ceil(exact);
   return low === high ? `about ${low} in 100` : `about ${low}–${high} in 100`;
+}
+
+/** One sentence comparing someone with their peers, for the "In words" view. */
+function PeerSentence({
+  risk,
+  summary,
+  group,
+  threshold,
+}: {
+  risk: number;
+  summary: PeerSummary;
+  group: string;
+  threshold: number;
+}) {
+  const [low, high] = summary.interval(0.5);
+  const lower = Math.round(summary.shareBelow(risk) * N_DOTS);
+  const above = Math.round(summary.shareAtOrAbove(threshold) * N_DOTS);
+  return (
+    <>
+      {" "}
+      Among {group}, the middle half score between {pct(low)} and {pct(high)}. Yours is higher
+      than{" "}
+      <b>
+        {lower} in {N_DOTS}
+      </b>{" "}
+      of them, and {above} in {N_DOTS} of them are at or above {thresholdLabel(threshold)}.
+    </>
+  );
+}
+
+/** Who the comparison group is, where the data comes from, and its limits. */
+function PeerSummaryNote({
+  group,
+  loading,
+  failed,
+}: {
+  group: PeerGroup | null;
+  loading: boolean;
+  failed: boolean;
+}) {
+  if (failed) return <p className="compare-note">Couldn't load the comparison data. Try again later.</p>;
+  if (loading || !group) return <p className="compare-note">Loading the comparison…</p>;
+  return (
+    <div className="compare-note" aria-live="polite">
+      <p>
+        Comparing you with <b>{group.rows.length.toLocaleString()}</b> {group.label}{" "}
+        {group.source === "nhanes"
+          ? "from a CDC health survey where staff measured blood pressure and cholesterol."
+          : "who donated their data to this project."}
+      </p>
+      {group.note && <p className="compare-caveat">{group.note}</p>}
+      <Reveal
+        className="compare-how"
+        label="How this comparison works"
+        more={
+          <ul>
+            <li>
+              {group.source === "nhanes"
+                ? "People come from the CDC's National Health and Nutrition Examination Survey (NHANES), 2017–2023, weighted so the group mirrors the US population."
+                : "People come from this project's published, anonymous donation dataset. Donors chose to take part, so they may not represent everyone."}
+            </li>
+            <li>
+              Only people who haven't had a heart attack or stroke are included, since the
+              calculators are only meant for them.
+            </li>
+            <li>
+              Everyone is scored by the same three calculators as you, with your ancestry setting,
+              so the comparison is about measured health: blood pressure, cholesterol, smoking,
+              diabetes, weight, kidney function, and medicines.
+            </li>
+            <li>
+              The survey doesn't ask every question this tool does, so peers are scored without
+              family history or the extra conditions QRISK3 asks about.
+            </li>
+          </ul>
+        }
+      >
+        <p className="compare-how-label">How this comparison works</p>
+      </Reveal>
+    </div>
+  );
 }
 
 /** The plain-language "how is this calculated?" panel on each result card. */
@@ -102,6 +191,13 @@ export default function App() {
   }, [mode]);
   const [threshold, setThreshold] = useState(0.075);
   const [view, setView] = useState<View>("dots");
+  const [compare, setCompare] = useState(false);
+  const [peerData, setPeerData] = useState<PeerData | null>(null);
+  const [peerError, setPeerError] = useState(false);
+  useEffect(() => {
+    if (!compare || peerData) return;
+    loadPeers().then(setPeerData, () => setPeerError(true));
+  }, [compare, peerData]);
   const [whatIf, setWhatIf] = useState<Partial<Profile>>({});
   const problem = validate(profile);
   // Keep the last valid profile on screen while someone is mid-edit.
@@ -120,8 +216,23 @@ export default function App() {
     ) as Record<string, Summary>;
   }, [shown, readings]);
 
+  const peerGroup = useMemo(
+    () =>
+      compare && peerData
+        ? findPeers(peerData, { age: shown.age, female: shown.sex === "female", ancestry })
+        : null,
+    [compare, peerData, shown.age, shown.sex, ancestry],
+  );
+  const peers = useMemo(
+    () => (peerGroup && peerData ? scorePeers(peerData, peerGroup.rows, shown) : null),
+    [peerGroup, peerData, shown],
+  );
+
   const xMax = riskDomainMax(
-    results.map((r) => summaries[r.model.key]!.interval(0.98)[1]),
+    [
+      ...results.map((r) => summaries[r.model.key]!.interval(0.98)[1]),
+      ...(peers ? results.map((r) => peers[r.model.key].interval(0.9)[1]) : []),
+    ],
     threshold,
   );
   const { spread, side } = headline(results, summaries, threshold);
@@ -465,34 +576,104 @@ export default function App() {
               </label>
             </div>
 
+            <div className="compare">
+              <label className="compare-toggle">
+                <input
+                  type="checkbox"
+                  checked={compare}
+                  onChange={(e) => setCompare(e.target.checked)}
+                />
+                <span>
+                  <strong>Compare with people like you</strong>
+                  Same sex, within 10 years of your age, and the same race or ancestry
+                </span>
+              </label>
+              {compare && (
+                <PeerSummaryNote
+                  group={peerGroup}
+                  loading={!peerData && !peerError}
+                  failed={peerError}
+                />
+              )}
+            </div>
+
             {view === "dots" && (
               <>
                 <QuantileDotplots
-                  rows={results.map((r) => ({
-                    key: r.model.key,
-                    name: r.model.name,
-                    dots: summaries[r.model.key]!.quantileDots(N_DOTS),
-                  }))}
+                  rows={results.flatMap((r) => {
+                    const own = {
+                      key: r.model.key,
+                      name: r.model.name,
+                      dots: summaries[r.model.key]!.quantileDots(N_DOTS),
+                    };
+                    const p = peers?.[r.model.key];
+                    if (!p) return [own];
+                    const lower = Math.round(p.shareBelow(r.risk) * N_DOTS);
+                    return [
+                      own,
+                      {
+                        key: `${r.model.key}-peers`,
+                        name: "People like you",
+                        dots: p.quantileDots(N_DOTS),
+                        peer: {
+                          you: r.risk,
+                          caption: (
+                            <>
+                              You're higher than <b>{lower}</b> of {N_DOTS}
+                            </>
+                          ),
+                          label: `People like you, scored by ${r.model.name}: your ${pct(r.risk)} is higher than ${lower} of ${N_DOTS}. They range from ${pct(p.quantile(0.025))} to ${pct(p.quantile(0.975))}.`,
+                        },
+                      },
+                    ];
+                  })}
                   threshold={threshold}
                   xMax={xMax}
                 />
                 <p className="caption">
-                  Each dot is one of {N_DOTS} equally likely outcomes. Dots at or past the dashed
-                  line are highlighted.
+                  Each blue dot is one of {N_DOTS} equally likely outcomes. Dots at or past the
+                  dashed line are highlighted.
+                  {peers && (
+                    <>
+                      {" "}
+                      Each grey dot is a person: 1 in {N_DOTS} people like you.
+                    </>
+                  )}
                 </p>
               </>
             )}
             {view === "ranges" && (
               <RangeBands
-                rows={results.map((r) => {
+                rows={results.flatMap((r) => {
                   const s = summaries[r.model.key]!;
-                  return {
+                  const own = {
                     key: r.model.key,
                     name: r.model.name,
                     risk: r.risk,
                     outer: s.interval(0.9),
                     inner: s.interval(0.5),
                   };
+                  const p = peers?.[r.model.key];
+                  if (!p) return [own];
+                  const [low, high] = p.interval(0.5);
+                  return [
+                    own,
+                    {
+                      key: `${r.model.key}-peers`,
+                      name: "People like you",
+                      risk: r.risk,
+                      outer: p.interval(0.9),
+                      inner: p.interval(0.5),
+                      peer: {
+                        caption: (
+                          <>
+                            The middle half fall between <b>{pct(low)}</b> and <b>{pct(high)}</b>
+                          </>
+                        ),
+                        label: `People like you, scored by ${r.model.name}: the middle half fall between ${pct(low)} and ${pct(high)}; 90% between ${pct(p.interval(0.9)[0])} and ${pct(p.interval(0.9)[1])}. Yours is ${pct(r.risk)}.`,
+                      },
+                    },
+                  ];
                 })}
                 threshold={threshold}
                 xMax={xMax}
@@ -514,6 +695,14 @@ export default function App() {
                         {k} of {N_DOTS}
                       </b>{" "}
                       re-measurements, it's at or above {thresholdLabel(threshold)}.
+                      {peers && peerGroup && (
+                        <PeerSentence
+                          risk={r.risk}
+                          summary={peers[r.model.key]}
+                          group={peerGroup.label}
+                          threshold={threshold}
+                        />
+                      )}
                     </p>
                   );
                 })}

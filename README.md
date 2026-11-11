@@ -52,17 +52,21 @@ The [app](https://anika-lakhani.github.io/south-asian-heart-risk/) has two parts
 
 **Step 1 opens by asking about heart history.** The calculators are only valid before a first heart attack or stroke, so anyone who's had one is told why they won't get a score, and invited to donate their data instead.
 
-**A results page** starts with how to read it ("three answers, not one verdict"), then shows each calculator's estimate, a likely range, and a natural-frequency translation ("about 7–8 in 100 people with the same inputs"). It separates the two kinds of uncertainty, **model** (the calculators disagree) and **measurement** (any one reading is noisy), and shows the measurement spread in your choice of three formats from the original study design:
+**A results page** starts with how to read it ("three answers, not one verdict"), then shows each calculator's estimate, a likely range, and a natural-frequency translation ("about 7–8 in 100 people with the same inputs"). Pointing at a calculator, or tapping its ⓘ, explains in plain language how it builds its number and what it assumes (for example, that PCE only has white and African American versions, so it scores South Asians as white). It separates the two kinds of uncertainty, **model** (the calculators disagree) and **measurement** (any one reading is noisy), and shows the measurement spread in your choice of three formats from the original study design:
 
 - **Dots**: a quantile dotplot. Each of 20 dots is one equally likely re-measurement, and the dots past the treatment threshold are highlighted, so "10 of 20" is something you can count. On load the dots drop in one at a time, a nod to the dice paper's Plinko display.
 - **Ranges**: 90% and middle-50% bands around each estimate.
 - **In words**: a plain-language summary for each model.
 
+**"Compare with people like you"** adds a grey row under each calculator in all three formats: the same calculator run on real people of your sex, within 10 years of your age, and your race or ancestry, with a "You" marker showing where you fall ("you're higher than 13 of 20"). The people come from [NHANES](https://www.cdc.gov/nchs/nhanes/), the CDC survey where staff measure blood pressure and draw blood, weighted to represent the US. NHANES records all Asian Americans as one group, so South Asians are compared with Asian Americans, and the app says so. Once enough South Asians have donated, the comparison switches to donors of the same ancestry automatically. The data (about 110 KB) loads only when the box is ticked.
+
+<img src="docs/screenshots/people-like-you.png" alt="Compare with people like you: under each calculator's blue dots, a grey row of 20 dots shows 210 Asian American men aged 38 to 58, with a 'You' marker. The user is higher than 10, 13, and 11 of 20 of them on PCE, PREVENT, and QRISK3." width="520">
+
 <img src="docs/screenshots/phone.png" alt="The quantile dotplots on a phone: QRISK3 shows 10 of 20 dots at or past the dashed 7.5% line, while the other two models sit well below it." width="260" align="right">
 
 It also shows the same person scored as white (only QRISK3 changes), and what-if sliders that update every model live as you drag. The headline sentence is generated from your results, so it says what matters for *you* ("the calculators disagree about which side of the line you're on"). Everything follows the system light/dark theme, using blue palettes that pass colorblind-safety and contrast checks in both modes. Every chart has an accessible text description and a table twin, and animation respects reduced-motion settings.
 
-<img src="docs/screenshots/donate-story.png" alt="The donation page: cited statistics on South Asian heart risk and a diagram of twelve Asian groups collapsing into one 'Asian' box in US surveys.">
+<img src="docs/screenshots/donate-story.png" alt="The donation page as an infographic: three big statistics on South Asian heart risk, a diagram of twelve Asian groups collapsing into one 'Asian' box, and tiles showing a 2.4% to 7.5% spread between calculators and the 10% statin line. Each box reveals details and sources on hover or tap.">
 
 **Anonymous data donation.** After their results, people can donate their answers to an open dataset with real South Asian categories, plus a few questions US surveys don't ask: age at first heart event, years since immigrating, and optional South Asian-specific risks like waist size, chewing tobacco, and Lp(a). Answers are anonymized in the browser (ages become 5-year bands; no name, email, or location), each section is saved on its own, and consent is an unchecked box. Each section passes an invisible [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/) bot check, verified by a server function before anything is saved; the database ([`supabase/`](supabase/)) accepts rows only from that function and never lets the website read them. The [privacy notice](https://anika-lakhani.github.io/south-asian-heart-risk/#privacy) and [data dictionary](docs/DATA_DICTIONARY.md) document exactly what's collected and released. **[How data donation works](docs/DONATIONS.md)** explains the storage, anonymization, and release pipeline end to end, including its known limits. A daily [health check](.github/workflows/health.yml) keeps the free database active and emails the owner if anything stops answering. To try the flow without saving anything, open the app with `?donate=preview`.
 
@@ -91,7 +95,8 @@ src/heartrisk/   Python reference implementation (NumPy, vectorized)
 tests/           Python tests against published reference values
 web/             The app: React + TypeScript, hand-built SVG charts, no chart library
   src/models/    TypeScript port of the models, tested for parity with Python
-scripts/         Python-to-TypeScript generators, and the dataset release script
+scripts/         Python-to-TypeScript generators, the dataset release script, and the
+                 "people like you" builder (NHANES + released donations)
 ml/              ML analysis of CDC survey data: download, prepare, train, model card
 supabase/        Donation database schema and the bot-check function (see its README)
 docs/            Case study, donation explainer, and data dictionary
@@ -178,6 +183,15 @@ python scripts/release_dataset.py          # writes data/releases/<YYYY-MM>/
 
 It drops test entries, merges each donor's sections, and guarantees every combination of age band, sex, ancestry, and region describes at least 5 people. Rare combinations are generalized, least valuable detail first, and anything still rare is withheld. It refuses to write a release with fewer than 30 rows. Review the CSV and release notes, then commit them to publish.
 
+Then fold the release into "Compare with people like you" and commit the result:
+
+```bash
+python scripts/build_peers.py --download   # first time only: fetches NHANES (~40 MB, git-ignored)
+python scripts/build_peers.py              # rewrites web/src/data/peers.json with the newest release
+```
+
+Only donors who haven't had a heart event are added, and only from the already-public, k-anonymous release, never the private database.
+
 ## Roadmap
 
 1. ✅ **Risk models + uncertainty engine.** PCE, PREVENT, and QRISK3 as a tested, vectorized package, plus Monte Carlo propagation of measurement noise.
@@ -185,12 +199,14 @@ It drops test entries, merges each donor's sections, and guarantees every combin
 3. ✅ **ML analysis.** Reproducible pipeline on CDC BRFSS 2025, with survey-weighted evaluation, subgroup audit, per-person explanations, and a model card.
 4. ✅ **[Case study](docs/CASE_STUDY.md)** on the design decisions and what the data showed.
 5. ✅ **[Anonymous data donation](docs/DONATIONS.md)**: heart-history check, cited donation page, bot-checked submissions, add-only database, privacy notice, and a k-anonymity release script for an open dataset.
-6. **Next:** recruit donors through community partners, a five-person usability study, and calibration on South Asian-specific data (the MASALA study).
+6. ✅ **Explanations and comparison**: plain-language explainers for each calculator, a "people like you" comparison from NHANES that switches to South Asian donors as they arrive, and a scannable donation page.
+7. **Next:** recruit donors through community partners, a five-person usability study, and calibration on South Asian-specific data (the MASALA study).
 
 ## Caveats
 
 - **The outcomes differ.** PCE predicts hard ASCVD (heart attack, coronary death, stroke). PREVENT predicts ASCVD. QRISK3 predicts CVD including TIA, a slightly broader outcome. Some of the gap comes from that.
 - **The populations differ.** QRISK3 is calibrated to UK patients. Its South Asian terms describe British South Asians, who may differ from South Asians in the US.
+- **The comparison group is approximate.** NHANES doesn't ask everything this tool does, so peers are scored without family history or QRISK3's extra conditions, and with your ancestry setting. It compares measured health, not ancestry.
 - **QRISK3 inputs the US models don't use** (Townsend deprivation score, SBP variability, and several conditions) default to neutral values unless provided.
 
 ## Sources
@@ -199,13 +215,15 @@ It drops test entries, merges each donor's sections, and guarantees every combin
 - Khan SS, et al. Development and Validation of the American Heart Association's PREVENT Equations. *Circulation* 2024;149:430–449.
 - Hippisley-Cox J, Coupland C, Brindle P. Development and validation of QRISK3 risk prediction algorithms. *BMJ* 2017;357:j2099.
 - Grundy SM, et al. 2018 AHA/ACC Guideline on the Management of Blood Cholesterol. *Circulation* 2019;139:e1082–e1143.
+- Centers for Disease Control and Prevention, National Center for Health Statistics. National Health and Nutrition Examination Survey, 2017–March 2020 and August 2021–August 2023.
+- Inker LA, et al. New creatinine- and cystatin C-based equations to estimate GFR without race. *N Engl J Med* 2021;385:1737–1749.
 - Muntner P, et al. Reproducibility of visit-to-visit variability of blood pressure measured as part of routine clinical care. *J Hypertens* 2011;29:2332–2338.
 
 ## License
 
 MIT, except the files that implement ClinRisk's QRISK3-2017 algorithm, which are LGPL-3.0-or-later like the original: [`src/heartrisk/models/qrisk3.py`](src/heartrisk/models/qrisk3.py), [`web/src/models/qrisk3.ts`](web/src/models/qrisk3.ts), and [`web/src/models/qrisk3Coefficients.ts`](web/src/models/qrisk3Coefficients.ts). See [LICENSE](LICENSE) and [LICENSES/](LICENSES/).
 
-Released datasets in `data/releases/` are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Released datasets in `data/releases/` are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). [`web/src/data/peers.json`](web/src/data/peers.json) is derived from NHANES, which is in the public domain, plus any released donations.
 
 ## Disclaimer
 
