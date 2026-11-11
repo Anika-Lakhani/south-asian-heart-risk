@@ -84,9 +84,9 @@ npm run dev    # http://localhost:5173/south-asian-heart-risk/
 
 
 
-Step 1 of the intake: a short introduction beside a card asking for age, sex, and ancestry, with a four-step progress bar.
+Step 1 of the intake: a short introduction beside a card that first asks whether a doctor has ever told you that you had a heart attack, angina, a stroke, or heart failure, then asks your age, with a four-step progress bar.
 
-<img src="docs/screenshots/intake.png" alt="Step 1 of the intake: a short introduction beside a card asking for age, sex, and ancestry, with a four-step progress bar.">
+<img src="docs/screenshots/intake.png" alt="Step 1 of the intake: a short introduction beside a card that first asks whether a doctor has ever told you that you had a heart attack, angina, a stroke, or heart failure, then asks your age, with a four-step progress bar.">
 
 ## How it's built
 
