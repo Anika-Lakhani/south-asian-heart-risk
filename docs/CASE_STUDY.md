@@ -5,8 +5,9 @@
 > **In short:** Heart-risk calculators give South Asians wildly different answers, and a
 > single clinic reading can't say which side of a treatment threshold you're on. I built a
 > tool that makes both kinds of uncertainty visible, grounded in published clinical models
-> and HCI research on how people read uncertainty. Then I tested what standard US survey data
-> would have said instead, and it got South Asians backwards.
+> and HCI research on how people read uncertainty, and lets people compare themselves with
+> others like them. Then I tested what standard US survey data would have said instead, and
+> it got South Asians backwards, so I built a way to collect the data that's missing.
 
 ![The results page](screenshots/results-light.png)
 
@@ -103,6 +104,13 @@ idea: **guide people in, then teach them how to read the answer.**
   showing any number.
 - **Natural frequencies on every estimate**, and a key separating model from measurement
   uncertainty.
+- **Each calculator explains itself.** Pointing at a result card reveals, in plain language,
+  how that calculator builds its number and what it assumes: PCE has only white and African
+  American versions, so it scores South Asians as white; PREVENT leaves race out on purpose,
+  so it can't see South Asian risk either; QRISK3 assumes UK care and counts mini-strokes,
+  so it runs higher. Showing the disagreement only helps if people can see *why* the
+  calculators disagree. Hover doesn't exist on phones or for keyboard users, so the same
+  panel also opens from a small ⓘ button that works by tap, keyboard, and screen reader.
 
 ![The intake](screenshots/intake.png)
 
@@ -112,6 +120,45 @@ Accessibility wasn't an afterthought: the whole flow works in dark mode, on phon
 reduced motion, and every chart has a text description and a table equivalent.
 
 <br clear="right">
+
+## "Is that normal for someone like me?"
+
+A 10-year risk of 7.5% means little without a reference point. The natural next question is
+how it compares with people like you, so the results page has a **"Compare with people like
+you"** option: same sex, within 10 years of your age, and the same race or ancestry.
+
+**The data had to be measured, not self-reported.** To compare fairly, every peer has to be
+scored by the same three calculators, which needs real blood pressure and cholesterol. BRFSS,
+which I'd used for the ML analysis, doesn't have those. NHANES does: CDC staff measure blood
+pressure and draw blood from a nationally representative sample. I pooled the two most recent
+cycles (2017–2023) for about 10,000 adults, kept only people who'd never had a heart attack
+or stroke (the calculators' own rule), and used the survey weights so each group reflects the
+US population. The browser scores peers with the exact model code it uses for you.
+
+**It runs into the same wall, and says so.** NHANES also pools all Asian Americans together,
+so a Pakistani man is compared with 210 Asian American men aged 38–58, and the page tells him
+that plainly. This is where the donation project pays off: once at least 30 donors match
+someone's sex, age, and ancestry, the comparison switches to them automatically. Donating
+your data directly improves what the next person sees. It only reads the public, anonymized
+release, never the private database.
+
+**Holding one thing constant on purpose.** Peers are scored with *your* ancestry setting. The
+alternative, guessing which Asian American peers are South Asian, would be invented data. This
+way the comparison isolates what people can actually act on: blood pressure, cholesterol,
+smoking, diabetes, weight, and kidney function.
+
+**One chart, not two.** The first version put peers in a separate grey row under each
+calculator. That doubled the page length and forced the eye to jump between rows. The final
+version draws both on one chart: your 20 re-measurements stack above a shared baseline and
+20 peers (each 1 in 20 people like you) hang below it, so both are read against the same axis
+and threshold. In the ranges view, peers are a quiet grey track behind your blue bands. It's
+the same quantile-dotplot idea as the rest of the app, just mirrored.
+
+![Compare with people like you](screenshots/people-like-you.png)
+
+**A test caught a real bug.** My first weighted-percentile function used a midpoint rule that
+picked the wrong person when one participant carried most of the weight. A two-person test
+case exposed it before it shipped.
 
 ## What standard US data would have said
 
@@ -161,6 +208,12 @@ to research on Asian Americans and Pacific Islanders over 26 years. A diagram sh
 distinct groups collapsing into a single "Asian" box. The consent box starts unchecked, and
 saying no is a neutral "Back to my results".
 
+The first version of that page was accurate but dense: every statistic came with a full
+paragraph. I reworked it into a scannable infographic. Each box shows only a headline and a
+big number or diagram ("~6 years earlier", "2.4% ↔ 7.5%", "10%"), and the full explanation and
+citation appear on hover or tap. The test I held it to was that someone who never hovers
+still gets the whole argument.
+
 ![The donation page](screenshots/donate-story.png)
 
 **Privacy is enforced in three places, so one failure doesn't expose anyone:**
@@ -189,9 +242,10 @@ a [data dictionary](DATA_DICTIONARY.md) for researchers, and an end-to-end
 
 ## Quality
 
-- **490 automated tests**: published reference values for all three calculators, Python-to-
-  TypeScript parity, the BRFSS recoding rules, every intake and donation path, the bot-check
-  function, and the release script's anonymization guarantee.
+- **506 automated tests**: published reference values for all three calculators, Python-to-
+  TypeScript parity, the BRFSS and NHANES recoding rules, survey-weighted peer percentiles,
+  every intake and donation path, the bot-check function, and the release script's
+  anonymization guarantee.
 - **Security rules tested twice**: in a local Postgres and against the live database.
 - **CI on every push** runs both suites, then builds and deploys the site.
 - **Licensing handled properly.** QRISK3 is LGPL, so those files carry that license and the
@@ -201,10 +255,13 @@ a [data dictionary](DATA_DICTIONARY.md) for researchers, and an end-to-end
 
 1. **A small usability study.** The original project was a user study. Five participants, one
    example profile each, three questions: *What's your risk? How sure is it? Would you talk to
-   a doctor?* The measure that matters is whether people read the dotplot correctly.
-   It would also show whether the donation page persuades without pressuring.
+   a doctor?* The measure that matters is whether people read the dotplot correctly,
+   including the mirrored "people like you" version. It would also show whether the donation
+   page persuades without pressuring.
 2. **Recruit donors through community partners**: South Asian student associations, community
-   organizations, and places of worship. The dataset becomes useful at a few hundred donors.
+   organizations, and places of worship. The dataset becomes useful at a few hundred donors,
+   and the "people like you" comparison can then use South Asian peers instead of all Asian
+   Americans.
 3. **South Asian-specific data.** The MASALA study follows South Asian Americans specifically
    and would let me test calibration for the group this tool is about.
 4. **Clinician input** on whether the results page would help or hinder a real conversation
