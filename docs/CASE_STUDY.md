@@ -91,7 +91,16 @@ Python on every one to 12 decimal places, or CI fails.
 
 ### Redesigning the experience
 
-![Before: everything on one page](case-study/before.png)
+<table>
+  <tr>
+    <td width="50%"><img src="case-study/before.png" alt="Before: one page with a form of every input on the left and all three estimates and the dotplots on the right." width="100%"></td>
+    <td width="50%"><img src="case-study/after.png" alt="After: a results page that opens with how to read it, then three calculator cards with natural frequencies and explainer buttons, then the uncertainty section." width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Before:</b> every input and chart on one page</td>
+    <td align="center"><b>After:</b> a guided results page that teaches you to read it</td>
+  </tr>
+</table>
 
 The first web version put every input and every chart on one screen. It was accurate but
 overwhelming: a form beside a wall of results. I redesigned it in Figma Make around a simple
