@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Anika-Lakhani/south-asian-heart-risk/actions/workflows/ci.yml/badge.svg)](https://github.com/Anika-Lakhani/south-asian-heart-risk/actions/workflows/ci.yml)
 
+<sub>Topics: [`cardiovascular-risk`](https://github.com/topics/cardiovascular-risk) · [`heart-disease`](https://github.com/topics/heart-disease) · [`south-asian-health`](https://github.com/topics/south-asian-health) · [`health-equity`](https://github.com/topics/health-equity) · [`risk-calculator`](https://github.com/topics/risk-calculator) · [`nhanes`](https://github.com/topics/nhanes) · [`data-visualization`](https://github.com/topics/data-visualization) · [`uncertainty-visualization`](https://github.com/topics/uncertainty-visualization) · [`hci`](https://github.com/topics/hci) · [`react`](https://github.com/topics/react) · [`typescript`](https://github.com/topics/typescript)</sub>
+
 **Your 10-year heart risk depends on which calculator you ask, and on which day your blood pressure was measured.** This project makes both kinds of uncertainty visible, with a focus on South Asians, the group standard US calculators handle worst.
 
 **[Try it live →](https://anika-lakhani.github.io/south-asian-heart-risk/)** · **[Read the case study](docs/CASE_STUDY.md)**
